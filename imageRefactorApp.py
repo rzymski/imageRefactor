@@ -5,6 +5,8 @@ from tkinter.filedialog import asksaveasfilename, askopenfilename
 import tkinter.simpledialog as simpledialog
 import time
 import tkinter.font as font
+from copy import deepcopy
+import re
 
 class ImageRefactorApp:
     def __init__(self, root):
@@ -76,19 +78,20 @@ class ImageRefactorApp:
         self.operationSubmitButton = Button(self.pointOperationsLabel, text="Perform point transformation", command=self.doPointTransformation)
         self.operationSubmitButton.grid(row=8, column=0, sticky="WE", columnspan=2)
         # Parameters for operations
+        vcmd = (self.pointOperationsLabel.register(self.validateEntryRGB))
         self.parameterOperationsLabel = LabelFrame(self.pointOperationsLabel, text="Parameters", padx=10, pady=10, labelanchor="nw")
         self.parameterOperationsLabel.grid(row=7, column=0, sticky="WE")
         self.redChangeLabel = Label(self.parameterOperationsLabel, text="Red")
         self.redChangeLabel.grid(row=0, column=0, sticky="W")
-        self.redChangeEntry = Entry(self.parameterOperationsLabel)
+        self.redChangeEntry = Entry(self.parameterOperationsLabel, validate='all', validatecommand=(vcmd, '%P'))
         self.redChangeEntry.grid(row=0, column=1)
         self.greenChangeLabel = Label(self.parameterOperationsLabel, text="Green")
         self.greenChangeLabel.grid(row=1, column=0, sticky="W")
-        self.greenChangeEntry = Entry(self.parameterOperationsLabel)
+        self.greenChangeEntry = Entry(self.parameterOperationsLabel, validate='all', validatecommand=(vcmd, '%P'))
         self.greenChangeEntry.grid(row=1, column=1)
         self.blueChangeLabel = Label(self.parameterOperationsLabel, text="Blue")
         self.blueChangeLabel.grid(row=2, column=0, sticky="W")
-        self.blueChangeEntry = Entry(self.parameterOperationsLabel)
+        self.blueChangeEntry = Entry(self.parameterOperationsLabel, validate='all', validatecommand=(vcmd, '%P'))
         self.blueChangeEntry.grid(row=2, column=1)
 
         self.lightChangeLabel = Label(self.parameterOperationsLabel, text="Light")
@@ -102,6 +105,13 @@ class ImageRefactorApp:
         self.movedY = 0
 
         self.originalImage = None
+
+    def validateEntryRGB(self, P):
+        pattern = r'^-?\d*(\.\d*)?$'
+        if re.match(pattern, P) is not None:
+            return True
+        else:
+            return False
 
     def onRadioButtonSelect(self):
         self.updateParameterLabels(self.operationType.get())
@@ -140,72 +150,31 @@ class ImageRefactorApp:
             print("Nie ma takiej operacji")
 
     def addOperation(self):
-        pass
-
-    def zoom_settings(self):
-        self.root.bind("<MouseWheel>", self.wheel)
-        self.imscale = 1.0
-        self.delta = 0.75
-        self.text = self.imageSpace.create_text(0, 0, anchor='nw', text='')
-        self.show_image()
-        self.imageSpace.configure(scrollregion=self.imageSpace.bbox('all'))
-
-    def wheel(self, event):
-        scale = 1.0
-        if event.delta == -120:
-            scale *= self.delta
-            self.imscale *= self.delta
-        if event.delta == 120:
-            scale /= self.delta
-            self.imscale /= self.delta
-        # Rescale all canvas objects
-        x = self.imageSpace.canvasx(event.x)
-        y = self.imageSpace.canvasy(event.y)
-        self.imageSpace.scale(self.imageId, x, y, scale, scale)
-        self.show_image()
-    def show_image(self):
-        if self.imageId:
-            self.imageSpace.delete(self.imageId)
-            self.imageId = None
-            self.imageSpace.imagetk = None
-        width, height = self.image.size
-        new_size = int(self.imscale * width), int(self.imscale * height)
-        imagetk = ImageTk.PhotoImage(self.image.resize(new_size))
-        # # Use self.text object to set proper coordinates
-        self.imageId = self.imageSpace.create_image(self.imageSpace.coords(self.text), anchor='nw', image=imagetk)
-        self.imageSpace.lower(self.imageId)
-        self.imageSpace.imagetk = imagetk
-        self.movedX = 0
-        self.movedY = 0
-
-    def move_image(self, event, dx, dy):
-        if self.imageId is not None:
-            dx *= self.imscale*2
-            dy *= self.imscale*2
-            self.movedX += dx
-            self.movedY += dy
-            self.imageSpace.move(self.imageId, dx, dy)
-
-    def bind_keyboard_events(self):
-        self.root.bind("<Left>", lambda event: self.move_image(event, dx=10, dy=0))
-        self.root.bind("<Right>", lambda event: self.move_image(event, dx=-10, dy=0))
-        self.root.bind("<Up>", lambda event: self.move_image(event, dx=0, dy=10))
-        self.root.bind("<Down>", lambda event: self.move_image(event, dx=0, dy=-10))
-
-    def on_mouse_move(self, event):
-        # image_coords = self.imageSpace.coords(self.imageId)
-        # print(f"{image_coords} {self.image.width} {self.image.height}")
-        # print(f"f{self.image}")
-        if self.image is not None:
-            x, y = event.x-self.movedX, event.y-self.movedY
-            # print(f"x={event.x} mX={self.movedX}  y={event.y} mY={self.movedY} IX={self.image.width}  IY={self.image.height}")
-            # image_x, image_y = self.imageSpace.coords(self.imageId)
-            # print(f"Ob = {image_x} {image_y}")
-            if (0 <= x < self.image.width * self.imscale) and (0 <= y < self.image.height * self.imscale):
-                pixel_rgb = self.get_pixel_color(int(x/self.imscale), int(y/self.imscale))
-                self.update_pixel_info_label(int(x/self.imscale), int(y/self.imscale), pixel_rgb)
-            elif self.pixelXEntry.get():
-                self.update_pixel_info_label(None, None, None)
+        if self.image:
+            try:
+                red_change = int(self.redChangeEntry.get())
+            except:
+                red_change = None
+            try:
+                green_change = int(self.greenChangeEntry.get())
+            except:
+                green_change = None
+            try:
+                blue_change = int(self.blueChangeEntry.get())
+            except:
+                blue_change = None
+            if red_change is None and green_change is None and blue_change is None:
+                return
+            width, height = self.image.size
+            for x in range(width):
+                for y in range(height):
+                    pixel = self.image.getpixel((x, y))
+                    new_red = min(255, max(0, pixel[0] + red_change)) if red_change else pixel[0]
+                    new_green = min(255, max(0, pixel[1] + green_change)) if green_change else pixel[0]
+                    new_blue = min(255, max(0, pixel[2] + blue_change)) if blue_change else pixel[0]
+                    self.image.putpixel((x, y), (new_red, new_green, new_blue))
+            self.show_image()
+            print("Image updated with the addition operation.")
 
     def get_pixel_color(self, x, y):
         if self.image is not None:
@@ -235,7 +204,7 @@ class ImageRefactorApp:
         if self.imageId is not None:
             self.imageSpace.delete(self.imageId)
             self.movedX, self.movedY = 0, 0
-        self.imageId = self.imageSpace.create_image(0, 0, anchor="nw", image=self.tk_image)
+        self.imageId = self.imageSpace.create_image(self.movedX, self.movedY, anchor="nw", image=self.tk_image)
         self.imageSpace.bind("<Motion>", self.on_mouse_move)
         self.imageSpace.bind("<Enter>", self.changeCursor)
         self.imageSpace.bind("<Leave>", self.changeCursorBack)
@@ -243,32 +212,43 @@ class ImageRefactorApp:
         self.bind_mouse_drag_events()
         self.zoom_settings()
 
-    def changeCursor(self, event):
-        self.imageSpace.config(cursor="target")  # best option "pirate" XD
+    def show_image(self):
+        if self.imageId:
+            self.imageSpace.delete(self.imageId)
+            self.imageId = None
+            self.imageSpace.imagetk = None
+        width, height = self.image.size
+        new_size = int(self.imscale * width), int(self.imscale * height)
+        imagetk = ImageTk.PhotoImage(self.image.resize(new_size))
+        # # Use self.text object to set proper coordinates
+        self.imageId = self.imageSpace.create_image(self.movedX, self.movedY, anchor='nw', image=imagetk)
 
-    def changeCursorBack(self, event):
-        self.imageSpace.config(cursor="")
-
-    def measureTime(self, startEnd):
-        if startEnd == "start":
-            self.start_time = time.time()
-        elif startEnd == "end":
-            self.end_time = time.time()
-            execution_time = self.end_time - self.start_time
-            print(f"Czas wykonania funkcji: {execution_time} sekundy")
+        # self.imageId = self.imageSpace.create_image(self.imageSpace.coords(self.text), anchor='nw', image=imagetk)
+        self.imageSpace.lower(self.imageId)
+        self.imageSpace.imagetk = imagetk
+        # self.movedX = 0
+        # self.movedY = 0
 
     def loadJPG(self):
         filePath = askopenfilename()
         if filePath == '':
             return
         self.image = Image.open(filePath)
-        self.originalImage = self.image
+        self.originalImage = deepcopy(self.image)
         if self.image is None:
             return
         self.tk_image = ImageTk.PhotoImage(self.image)
         self.settingsAfterLoad()
 
-        # self.rgbOfPixel(36, 22)
+    def reloadOriginalJPG(self):
+        print(self.image)
+        self.image = deepcopy(self.originalImage)
+        print(self.image)
+        if self.image is None:
+            return
+        print("DZIALA")
+        self.tk_image = ImageTk.PhotoImage(self.image)
+        self.settingsAfterLoad()
 
     def saveJPG(self):
         if self.image:
@@ -279,7 +259,7 @@ class ImageRefactorApp:
                     self.image.save(file_path, "JPEG", quality=compression_quality)
                     print(f"Image saved as {file_path} with compression quality {compression_quality}")
 
-    #przesuwanie obrazków myszką
+    # przesuwanie obrazków myszką
     def start_drag(self, event):
         self.last_x = event.x
         self.last_y = event.y
@@ -301,6 +281,60 @@ class ImageRefactorApp:
         self.imageSpace.bind("<ButtonPress-1>", self.start_drag)
         self.imageSpace.bind("<B1-Motion>", self.drag_image)
         self.imageSpace.bind("<ButtonRelease-1>", self.stop_drag)
+    # zmiana kursora
+    def changeCursor(self, event):
+        self.imageSpace.config(cursor="target")  # best option "pirate" XD
 
-    def reloadOriginalJPG(self):
-        print("OK")
+    def changeCursorBack(self, event):
+        self.imageSpace.config(cursor="")
+
+    def zoom_settings(self):
+        self.root.bind("<MouseWheel>", self.wheel)
+        self.imscale = 1.0
+        self.delta = 0.75
+        self.text = self.imageSpace.create_text(0, 0, anchor='nw', text='')
+        self.show_image()
+        self.imageSpace.configure(scrollregion=self.imageSpace.bbox('all'))
+
+    def wheel(self, event):
+        scale = 1.0
+        if event.delta == -120:
+            scale *= self.delta
+            self.imscale *= self.delta
+        if event.delta == 120:
+            scale /= self.delta
+            self.imscale /= self.delta
+        # Rescale all canvas objects
+        x = self.imageSpace.canvasx(event.x)
+        y = self.imageSpace.canvasy(event.y)
+        self.imageSpace.scale(self.imageId, x, y, scale, scale)
+        self.show_image()
+
+    def move_image(self, event, dx, dy):
+        if self.imageId is not None:
+            dx *= self.imscale*2
+            dy *= self.imscale*2
+            self.movedX += dx
+            self.movedY += dy
+            self.imageSpace.move(self.imageId, dx, dy)
+
+    def bind_keyboard_events(self):
+        self.root.bind("<Left>", lambda event: self.move_image(event, dx=10, dy=0))
+        self.root.bind("<Right>", lambda event: self.move_image(event, dx=-10, dy=0))
+        self.root.bind("<Up>", lambda event: self.move_image(event, dx=0, dy=10))
+        self.root.bind("<Down>", lambda event: self.move_image(event, dx=0, dy=-10))
+
+    def on_mouse_move(self, event):
+        # image_coords = self.imageSpace.coords(self.imageId)
+        # print(f"{image_coords} {self.image.width} {self.image.height}")
+        # print(f"f{self.image}")
+        if self.image is not None:
+            x, y = event.x-self.movedX, event.y-self.movedY
+            # print(f"x={event.x} mX={self.movedX}  y={event.y} mY={self.movedY} IX={self.image.width}  IY={self.image.height}")
+            # image_x, image_y = self.imageSpace.coords(self.imageId)
+            # print(f"Ob = {image_x} {image_y}")
+            if (0 <= x < self.image.width * self.imscale) and (0 <= y < self.image.height * self.imscale):
+                pixel_rgb = self.get_pixel_color(int(x/self.imscale), int(y/self.imscale))
+                self.update_pixel_info_label(int(x/self.imscale), int(y/self.imscale), pixel_rgb)
+            elif self.pixelXEntry.get():
+                self.update_pixel_info_label(None, None, None)
