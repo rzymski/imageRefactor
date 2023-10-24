@@ -73,7 +73,7 @@ class ImageRefactorApp:
         self.radioBrightness.grid(row=4, column=0, sticky="W", columnspan=2)
         self.radioGrayScale1 = Radiobutton(self.pointOperationsLabel, text="Gray Scale averaged", value="grayAverage", variable=self.operationType, command=self.onRadioButtonSelect)
         self.radioGrayScale1.grid(row=5, column=0, sticky="W", columnspan=2)
-        self.radioGrayScale2 = Radiobutton(self.pointOperationsLabel, text="Gray Scale adjusted", value="grayAdjusted", variable=self.operationType, command=self.onRadioButtonSelect)
+        self.radioGrayScale2 = Radiobutton(self.pointOperationsLabel, text="Gray Scale adjusted", value="grayAdjust", variable=self.operationType, command=self.onRadioButtonSelect)
         self.radioGrayScale2.grid(row=6, column=0, sticky="W", columnspan=2)
         self.operationSubmitButton = Button(self.pointOperationsLabel, text="Perform point transformation", command=self.doPointTransformation)
         self.operationSubmitButton.grid(row=8, column=0, sticky="WE", columnspan=2)
@@ -137,7 +137,7 @@ class ImageRefactorApp:
             self.parameterOperationsLabel.grid(row=7, column=0, sticky="WE")
             self.lightChangeLabel.grid(row=0, column=0, sticky="W")
             self.lightChangeEntry.grid(row=0, column=1)
-        elif value == 'grayAverage' or value == 'grayAdjusted':
+        elif value == 'grayAverage' or value == 'grayAdjust':
             self.parameterOperationsLabel.grid_forget()
         else:
             raise Exception("Nie ma takiej opcji")
@@ -146,37 +146,74 @@ class ImageRefactorApp:
         print(f"OKej zrobił to: {self.operationType.get()}")
         if self.operationType.get() in ['+', '-', '*', '/']:
             self.simpleRGBOperation(self.operationType.get())
+        elif self.operationType.get() == 'grayAverage':
+            self.greyConversion(False)
+        elif self.operationType.get() == 'grayAdjust':
+            self.greyConversion(True)
         else:
             print("Nie ma takiej operacji")
+
+    def greyConversion(self, adjusted=False):
+        if self.image:
+            width, height = self.image.size
+            for x in range(width):
+                for y in range(height):
+                    pixel = self.image.getpixel((x, y))
+                    if adjusted:
+                        average = min(255, (0.299 * pixel[0] + 0.587 * pixel[1] + 0.114 * pixel[2]))
+                    else:
+                        average = (pixel[0] + pixel[1] + pixel[2]) / 3
+                    self.image.putpixel((x, y), (round(average), round(average), round(average)))
+            self.show_image()
 
     def simpleRGBOperation(self, operator):
         if self.image:
             try:
-                red_change = round(float(self.redChangeEntry.get()))
+                red_change = float(self.redChangeEntry.get())
             except:
                 red_change = None
             try:
-                green_change = round(float(self.greenChangeEntry.get()))
+                green_change = float(self.greenChangeEntry.get())
             except:
                 green_change = None
             try:
-                blue_change = round(float(self.blueChangeEntry.get()))
+                blue_change = float(self.blueChangeEntry.get())
             except:
                 blue_change = None
             if red_change is None and green_change is None and blue_change is None:
                 print("SAME NONY")
                 return
-            print(f"{red_change} {green_change} {blue_change}")
+            elif (red_change < 0 or green_change < 0 or blue_change < 0) and (operator == '/' or operator == '*'):
+                print("Nie ma sensu mnożyć lub dzielić przez ujemne wartosci")
+                return
+            elif (red_change == 0 or green_change == 0 or blue_change == 0) and operator == '/':
+                print("Nie mozna dzielic przez 0")
+                return
+            #print(f"{red_change} {green_change} {blue_change}")
             width, height = self.image.size
             for x in range(width):
                 for y in range(height):
                     pixel = self.image.getpixel((x, y))
-                    new_red = min(255, max(0, eval(f"{pixel[0]} {operator} {red_change}"))) if red_change else pixel[0]
-                    new_green = min(255, max(0, eval(f"{pixel[1]} {operator} {green_change}"))) if green_change else pixel[0]
-                    new_blue = min(255, max(0, eval(f"{pixel[2]} {operator} {blue_change}"))) if blue_change else pixel[0]
-                    self.image.putpixel((x, y), (new_red, new_green, new_blue))
+                    if operator == '+':
+                        new_red = min(255, max(0, pixel[0] + red_change)) if red_change is not None else pixel[0]
+                        new_green = min(255, max(0, pixel[1] + green_change)) if green_change is not None else pixel[1]
+                        new_blue = min(255, max(0, pixel[2] + blue_change)) if blue_change is not None else pixel[2]
+                    elif operator == '-':
+                        new_red = min(255, max(0, pixel[0] - red_change)) if red_change is not None else pixel[0]
+                        new_green = min(255, max(0, pixel[1] - green_change)) if green_change is not None else pixel[1]
+                        new_blue = min(255, max(0, pixel[2] - blue_change)) if blue_change is not None else pixel[2]
+                    elif operator == '*':
+                        new_red = min(255, max(0, pixel[0] * red_change)) if red_change is not None else pixel[0]
+                        new_green = min(255, max(0, pixel[1] * green_change)) if green_change is not None else pixel[1]
+                        new_blue = min(255, max(0, pixel[2] * blue_change)) if blue_change is not None else pixel[2]
+                    elif operator == '/':
+                        new_red = min(255, max(0, pixel[0] / red_change)) if red_change is not None else pixel[0]
+                        new_green = min(255, max(0, pixel[1] / green_change)) if green_change is not None else pixel[1]
+                        new_blue = min(255, max(0, pixel[2] / blue_change)) if blue_change is not None else pixel[2]
+                    else:
+                        raise Exception(f"Nie właściwy operator. Nie ma operatora: {operator}")
+                    self.image.putpixel((x, y), (round(new_red), round(new_green), round(new_blue)))
             self.show_image()
-            print("Image updated with the addition operation.")
 
     def get_pixel_color(self, x, y):
         if self.image is not None:
@@ -285,7 +322,7 @@ class ImageRefactorApp:
         self.imageSpace.bind("<ButtonRelease-1>", self.stop_drag)
     # zmiana kursora
     def changeCursor(self, event):
-        self.imageSpace.config(cursor="target")  # best option "pirate" XD
+        self.imageSpace.config(cursor="cross_reverse")  # best option "pirate" XD
 
     def changeCursorBack(self, event):
         self.imageSpace.config(cursor="")
@@ -340,3 +377,11 @@ class ImageRefactorApp:
                 self.update_pixel_info_label(int(x/self.imscale), int(y/self.imscale), pixel_rgb)
             elif self.pixelXEntry.get():
                 self.update_pixel_info_label(None, None, None)
+
+    def measureTime(self, startEnd):
+        if startEnd == "start":
+            self.start_time = time.time()
+        elif startEnd == "end":
+            self.end_time = time.time()
+            execution_time = self.end_time - self.start_time
+            print(f"Czas wykonania funkcji: {execution_time} sekundy")
