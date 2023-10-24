@@ -60,14 +60,14 @@ class ImageRefactorApp:
         self.pointOperationsLabel.grid(row=5, column=0, sticky="WE")
         # RadioButtons for operations
         self.operationType = StringVar()
-        self.operationType.set("add")
-        self.radioAddition = Radiobutton(self.pointOperationsLabel, text="Addition", value="add", variable=self.operationType, command=self.onRadioButtonSelect)
+        self.operationType.set("+")
+        self.radioAddition = Radiobutton(self.pointOperationsLabel, text="Addition", value="+", variable=self.operationType, command=self.onRadioButtonSelect)
         self.radioAddition.grid(row=0, column=0, sticky="W", columnspan=2)
-        self.radioSubtraction = Radiobutton(self.pointOperationsLabel, text="Subtraction", value="subtract", variable=self.operationType, command=self.onRadioButtonSelect)
+        self.radioSubtraction = Radiobutton(self.pointOperationsLabel, text="Subtraction", value="-", variable=self.operationType, command=self.onRadioButtonSelect)
         self.radioSubtraction.grid(row=1, column=0, sticky="W", columnspan=2)
-        self.radioMultiplication = Radiobutton(self.pointOperationsLabel, text="Multiplication", value="multiply", variable=self.operationType, command=self.onRadioButtonSelect)
+        self.radioMultiplication = Radiobutton(self.pointOperationsLabel, text="Multiplication", value="*", variable=self.operationType, command=self.onRadioButtonSelect)
         self.radioMultiplication.grid(row=2, column=0, sticky="W", columnspan=2)
-        self.radioDivision = Radiobutton(self.pointOperationsLabel, text="Division", value="divide", variable=self.operationType, command=self.onRadioButtonSelect)
+        self.radioDivision = Radiobutton(self.pointOperationsLabel, text="Division", value="/", variable=self.operationType, command=self.onRadioButtonSelect)
         self.radioDivision.grid(row=3, column=0, sticky="W", columnspan=2)
         self.radioBrightness = Radiobutton(self.pointOperationsLabel, text="Brightness change", value="brightness", variable=self.operationType, command=self.onRadioButtonSelect)
         self.radioBrightness.grid(row=4, column=0, sticky="W", columnspan=2)
@@ -125,7 +125,7 @@ class ImageRefactorApp:
         self.blueChangeEntry.grid_forget()
         self.lightChangeLabel.grid_forget()
         self.lightChangeEntry.grid_forget()
-        if value in ['add', 'subtract', 'multiply', 'divide']:
+        if value in ['+', '-', '*', '/']:
             self.parameterOperationsLabel.grid(row=7, column=0, sticky="WE")
             self.redChangeLabel.grid(row=0, column=0, sticky="W")
             self.redChangeEntry.grid(row=0, column=1)
@@ -144,34 +144,36 @@ class ImageRefactorApp:
 
     def doPointTransformation(self):
         print(f"OKej zrobił to: {self.operationType.get()}")
-        if self.operationType.get() == 'add':
-            self.addOperation()
+        if self.operationType.get() in ['+', '-', '*', '/']:
+            self.simpleRGBOperation(self.operationType.get())
         else:
             print("Nie ma takiej operacji")
 
-    def addOperation(self):
+    def simpleRGBOperation(self, operator):
         if self.image:
             try:
-                red_change = int(self.redChangeEntry.get())
+                red_change = round(float(self.redChangeEntry.get()))
             except:
                 red_change = None
             try:
-                green_change = int(self.greenChangeEntry.get())
+                green_change = round(float(self.greenChangeEntry.get()))
             except:
                 green_change = None
             try:
-                blue_change = int(self.blueChangeEntry.get())
+                blue_change = round(float(self.blueChangeEntry.get()))
             except:
                 blue_change = None
             if red_change is None and green_change is None and blue_change is None:
+                print("SAME NONY")
                 return
+            print(f"{red_change} {green_change} {blue_change}")
             width, height = self.image.size
             for x in range(width):
                 for y in range(height):
                     pixel = self.image.getpixel((x, y))
-                    new_red = min(255, max(0, pixel[0] + red_change)) if red_change else pixel[0]
-                    new_green = min(255, max(0, pixel[1] + green_change)) if green_change else pixel[0]
-                    new_blue = min(255, max(0, pixel[2] + blue_change)) if blue_change else pixel[0]
+                    new_red = min(255, max(0, eval(f"{pixel[0]} {operator} {red_change}"))) if red_change else pixel[0]
+                    new_green = min(255, max(0, eval(f"{pixel[1]} {operator} {green_change}"))) if green_change else pixel[0]
+                    new_blue = min(255, max(0, eval(f"{pixel[2]} {operator} {blue_change}"))) if blue_change else pixel[0]
                     self.image.putpixel((x, y), (new_red, new_green, new_blue))
             self.show_image()
             print("Image updated with the addition operation.")
