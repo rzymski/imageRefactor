@@ -1,36 +1,146 @@
-import tkinter as tk
+from tkinter import *
+# import tkinter as tk
 from PIL import Image, ImageTk
 from tkinter.filedialog import asksaveasfilename, askopenfilename
+import tkinter.simpledialog as simpledialog
 import time
-
+import tkinter.font as font
 
 class ImageRefactorApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Image viewer Piotr Szumowski")
+        bigFont = font.Font(size=12, weight="bold")
         self.screen_width = root.winfo_screenwidth()
         self.screen_height = root.winfo_screenheight()
         self.root.geometry(f"{self.screen_width}x{self.screen_height}")
+        self.frame = LabelFrame(self.root, padx=0, pady=0, labelanchor="w")
+        self.frame.pack(side="left", fill="both")
 
-        self.frame = tk.LabelFrame(self.root, padx=10, pady=10, labelanchor="n")
-        self.frame.pack(side="top", fill="both")
+        self.loadJPGButton = Button(self.frame, text="Load JPG", command=self.loadJPG, padx=10, pady=10)
+        self.loadJPGButton.grid(row=0, column=0, sticky="WE")
+        self.loadJPGButton['font'] = bigFont
 
-        self.loadJPGButton = tk.Button(self.frame, text="Load JPG", command=self.loadJPG, padx=20, pady=20)
-        self.loadJPGButton.grid(row=0, column=0)
+        self.reloadOriginalJPGButton = Button(self.frame, text="Reload original JPG", command=self.reloadOriginalJPG, padx=10, pady=10)
+        self.reloadOriginalJPGButton.grid(row=1, column=0, sticky="WE")
+        self.reloadOriginalJPGButton['font'] = bigFont
 
-        self.saveJPGButton = tk.Button(self.frame, text="Save JPG", command=self.saveJPG, padx=20, pady=20)
-        self.saveJPGButton.grid(row=0, column=1)
+        self.saveJPGButton = Button(self.frame, text="Save JPG", command=self.saveJPG, padx=10, pady=10)
+        self.saveJPGButton.grid(row=2, column=0, sticky="WE")
+        self.saveJPGButton['font'] = bigFont
+        # LabelFrame for pixel
+        self.pixel_info_label = LabelFrame(self.frame, text="Pixel", padx=0, pady=0, labelanchor="nw")
+        self.pixel_info_label.grid(row=4, column=0, sticky="WE")
+        # labels for pixel
+        self.pixelXLabel = Label(self.pixel_info_label, text="X")
+        self.pixelXLabel.grid(row=0, column=0, sticky="E")
+        self.pixelYLabel = Label(self.pixel_info_label, text="Y")
+        self.pixelYLabel.grid(row=1, column=0, sticky="E")
+        self.pixelRedLabel = Label(self.pixel_info_label, text="Red")
+        self.pixelRedLabel.grid(row=2, column=0, sticky="E")
+        self.pixelGreenLabel = Label(self.pixel_info_label, text="Green")
+        self.pixelGreenLabel.grid(row=3, column=0, sticky="E")
+        self.pixelBlueLabel = Label(self.pixel_info_label, text="Blue")
+        self.pixelBlueLabel.grid(row=4, column=0, sticky="E")
+        # entries for pixel
+        self.pixelXEntry = Entry(self.pixel_info_label, state=DISABLED, disabledforeground="black", disabledbackground="white", justify=CENTER)
+        self.pixelXEntry.grid(row=0, column=1)
+        self.pixelYEntry = Entry(self.pixel_info_label, state=DISABLED, disabledforeground="black", disabledbackground="white", justify=CENTER)
+        self.pixelYEntry.grid(row=1, column=1)
+        self.pixelRedEntry = Entry(self.pixel_info_label, state=DISABLED, disabledforeground="black", disabledbackground="white", justify=CENTER)
+        self.pixelRedEntry.grid(row=2, column=1)
+        self.pixelGreenEntry = Entry(self.pixel_info_label, state=DISABLED, disabledforeground="black", disabledbackground="white", justify=CENTER)
+        self.pixelGreenEntry.grid(row=3, column=1)
+        self.pixelBlueEntry = Entry(self.pixel_info_label, state=DISABLED, disabledforeground="black", disabledbackground="white", justify=CENTER)
+        self.pixelBlueEntry.grid(row=4, column=1)
+        # LabelFrame for operations
+        self.pointOperationsLabel = LabelFrame(self.frame, text="Point transformation", padx=10, pady=10, labelanchor="nw")
+        self.pointOperationsLabel.grid(row=5, column=0, sticky="WE")
+        # RadioButtons for operations
+        self.operationType = StringVar()
+        self.operationType.set("add")
+        self.radioAddition = Radiobutton(self.pointOperationsLabel, text="Addition", value="add", variable=self.operationType, command=self.onRadioButtonSelect)
+        self.radioAddition.grid(row=0, column=0, sticky="W", columnspan=2)
+        self.radioSubtraction = Radiobutton(self.pointOperationsLabel, text="Subtraction", value="subtract", variable=self.operationType, command=self.onRadioButtonSelect)
+        self.radioSubtraction.grid(row=1, column=0, sticky="W", columnspan=2)
+        self.radioMultiplication = Radiobutton(self.pointOperationsLabel, text="Multiplication", value="multiply", variable=self.operationType, command=self.onRadioButtonSelect)
+        self.radioMultiplication.grid(row=2, column=0, sticky="W", columnspan=2)
+        self.radioDivision = Radiobutton(self.pointOperationsLabel, text="Division", value="divide", variable=self.operationType, command=self.onRadioButtonSelect)
+        self.radioDivision.grid(row=3, column=0, sticky="W", columnspan=2)
+        self.radioBrightness = Radiobutton(self.pointOperationsLabel, text="Brightness change", value="brightness", variable=self.operationType, command=self.onRadioButtonSelect)
+        self.radioBrightness.grid(row=4, column=0, sticky="W", columnspan=2)
+        self.radioGrayScale1 = Radiobutton(self.pointOperationsLabel, text="Gray Scale averaged", value="grayAverage", variable=self.operationType, command=self.onRadioButtonSelect)
+        self.radioGrayScale1.grid(row=5, column=0, sticky="W", columnspan=2)
+        self.radioGrayScale2 = Radiobutton(self.pointOperationsLabel, text="Gray Scale adjusted", value="grayAdjusted", variable=self.operationType, command=self.onRadioButtonSelect)
+        self.radioGrayScale2.grid(row=6, column=0, sticky="W", columnspan=2)
+        self.operationSubmitButton = Button(self.pointOperationsLabel, text="Perform point transformation", command=self.doPointTransformation)
+        self.operationSubmitButton.grid(row=8, column=0, sticky="WE", columnspan=2)
+        # Parameters for operations
+        self.parameterOperationsLabel = LabelFrame(self.pointOperationsLabel, text="Parameters", padx=10, pady=10, labelanchor="nw")
+        self.parameterOperationsLabel.grid(row=7, column=0, sticky="WE")
+        self.redChangeLabel = Label(self.parameterOperationsLabel, text="Red")
+        self.redChangeLabel.grid(row=0, column=0, sticky="W")
+        self.redChangeEntry = Entry(self.parameterOperationsLabel)
+        self.redChangeEntry.grid(row=0, column=1)
+        self.greenChangeLabel = Label(self.parameterOperationsLabel, text="Green")
+        self.greenChangeLabel.grid(row=1, column=0, sticky="W")
+        self.greenChangeEntry = Entry(self.parameterOperationsLabel)
+        self.greenChangeEntry.grid(row=1, column=1)
+        self.blueChangeLabel = Label(self.parameterOperationsLabel, text="Blue")
+        self.blueChangeLabel.grid(row=2, column=0, sticky="W")
+        self.blueChangeEntry = Entry(self.parameterOperationsLabel)
+        self.blueChangeEntry.grid(row=2, column=1)
 
+        self.lightChangeLabel = Label(self.parameterOperationsLabel, text="Light")
+        self.lightChangeEntry = Entry(self.parameterOperationsLabel)
 
-        self.pixel_info_label = tk.Label(self.frame, text="", padx=10, pady=10)
-        self.pixel_info_label.grid(row=0, column=2)
-
-        self.imageSpace = tk.Canvas(self.root, bg="white")
+        self.imageSpace = Canvas(self.root, bg="white")
         self.imageSpace.pack(fill="both", expand=True)
         self.image = None
         self.imageId = None
         self.movedX = 0
         self.movedY = 0
+
+        self.originalImage = None
+
+    def onRadioButtonSelect(self):
+        self.updateParameterLabels(self.operationType.get())
+
+    def updateParameterLabels(self, value):
+        self.redChangeLabel.grid_forget()
+        self.redChangeEntry.grid_forget()
+        self.greenChangeLabel.grid_forget()
+        self.greenChangeEntry.grid_forget()
+        self.blueChangeLabel.grid_forget()
+        self.blueChangeEntry.grid_forget()
+        self.lightChangeLabel.grid_forget()
+        self.lightChangeEntry.grid_forget()
+        if value in ['add', 'subtract', 'multiply', 'divide']:
+            self.parameterOperationsLabel.grid(row=7, column=0, sticky="WE")
+            self.redChangeLabel.grid(row=0, column=0, sticky="W")
+            self.redChangeEntry.grid(row=0, column=1)
+            self.greenChangeLabel.grid(row=1, column=0, sticky="W")
+            self.greenChangeEntry.grid(row=1, column=1)
+            self.blueChangeLabel.grid(row=2, column=0, sticky="W")
+            self.blueChangeEntry.grid(row=2, column=1)
+        elif value == 'brightness':
+            self.parameterOperationsLabel.grid(row=7, column=0, sticky="WE")
+            self.lightChangeLabel.grid(row=0, column=0, sticky="W")
+            self.lightChangeEntry.grid(row=0, column=1)
+        elif value == 'grayAverage' or value == 'grayAdjusted':
+            self.parameterOperationsLabel.grid_forget()
+        else:
+            raise Exception("Nie ma takiej opcji")
+
+    def doPointTransformation(self):
+        print(f"OKej zrobił to: {self.operationType.get()}")
+        if self.operationType.get() == 'add':
+            self.addOperation()
+        else:
+            print("Nie ma takiej operacji")
+
+    def addOperation(self):
+        pass
 
     def zoom_settings(self):
         self.root.bind("<MouseWheel>", self.wheel)
@@ -88,15 +198,14 @@ class ImageRefactorApp:
         # print(f"f{self.image}")
         if self.image is not None:
             x, y = event.x-self.movedX, event.y-self.movedY
-            print(f"x={event.x} mX={self.movedX}  y={event.y} mY={self.movedY} IX={self.image.width}  IY={self.image.height}")
-
+            # print(f"x={event.x} mX={self.movedX}  y={event.y} mY={self.movedY} IX={self.image.width}  IY={self.image.height}")
             # image_x, image_y = self.imageSpace.coords(self.imageId)
             # print(f"Ob = {image_x} {image_y}")
             if (0 <= x < self.image.width * self.imscale) and (0 <= y < self.image.height * self.imscale):
                 pixel_rgb = self.get_pixel_color(int(x/self.imscale), int(y/self.imscale))
                 self.update_pixel_info_label(int(x/self.imscale), int(y/self.imscale), pixel_rgb)
-            else:
-                self.pixel_info_label.config(text="")
+            elif self.pixelXEntry.get():
+                self.update_pixel_info_label(None, None, None)
 
     def get_pixel_color(self, x, y):
         if self.image is not None:
@@ -110,8 +219,17 @@ class ImageRefactorApp:
     def update_pixel_info_label(self, x, y, pixel_rgb):
         if pixel_rgb is not None:
             r, g, b = pixel_rgb
-            info_text = f"X: {x}, Y: {y}, R: {r}, G: {g}, B: {b}"
-            self.pixel_info_label.config(text=info_text, font=24)
+            for entry, value in zip(
+                    [self.pixelXEntry, self.pixelYEntry, self.pixelRedEntry, self.pixelGreenEntry, self.pixelBlueEntry], [x, y, r, g, b]):
+                entry.config(state="normal")
+                entry.delete(0, 'end')
+                entry.insert(0, str(value))
+                entry.config(state="disabled")
+        else:
+            for entry in self.pixelXEntry, self.pixelYEntry, self.pixelRedEntry, self.pixelGreenEntry, self.pixelBlueEntry:
+                entry.config(state="normal")
+                entry.delete(0, 'end')
+                entry.config(state="disabled")
 
     def settingsAfterLoad(self):
         if self.imageId is not None:
@@ -119,8 +237,17 @@ class ImageRefactorApp:
             self.movedX, self.movedY = 0, 0
         self.imageId = self.imageSpace.create_image(0, 0, anchor="nw", image=self.tk_image)
         self.imageSpace.bind("<Motion>", self.on_mouse_move)
+        self.imageSpace.bind("<Enter>", self.changeCursor)
+        self.imageSpace.bind("<Leave>", self.changeCursorBack)
         self.bind_keyboard_events()
+        self.bind_mouse_drag_events()
         self.zoom_settings()
+
+    def changeCursor(self, event):
+        self.imageSpace.config(cursor="target")  # best option "pirate" XD
+
+    def changeCursorBack(self, event):
+        self.imageSpace.config(cursor="")
 
     def measureTime(self, startEnd):
         if startEnd == "start":
@@ -135,24 +262,45 @@ class ImageRefactorApp:
         if filePath == '':
             return
         self.image = Image.open(filePath)
+        self.originalImage = self.image
         if self.image is None:
             return
         self.tk_image = ImageTk.PhotoImage(self.image)
         self.settingsAfterLoad()
 
-        self.rgbOfPixel(36, 22)
+        # self.rgbOfPixel(36, 22)
 
     def saveJPG(self):
         if self.image:
-            compression_quality = tk.simpledialog.askinteger("Compression Quality", "Enter compression quality (0-100):", minvalue=0, maxvalue=100)
+            compression_quality = simpledialog.askinteger("Compression Quality", "Enter quality (0-100):", minvalue=0, maxvalue=100)
             if compression_quality is not None:
                 file_path = asksaveasfilename(initialfile='Untitled.jpg', defaultextension=".jpg", filetypes=[("JPEG files", "*.jpg")])
                 if file_path:
                     self.image.save(file_path, "JPEG", quality=compression_quality)
                     print(f"Image saved as {file_path} with compression quality {compression_quality}")
 
-    def rgbOfPixel(self, x, y):
-        image = self.image.convert('RGB')
-        r, g, b = image.getpixel((x, y))
-        pixelRGB = (r, g, b)
-        print(pixelRGB)
+    #przesuwanie obrazków myszką
+    def start_drag(self, event):
+        self.last_x = event.x
+        self.last_y = event.y
+
+    def drag_image(self, event):
+        if hasattr(self, 'last_x') and hasattr(self, 'last_y'):
+            dx = event.x - self.last_x
+            dy = event.y - self.last_y
+            self.move_image(event, dx, dy)
+            self.last_x = event.x
+            self.last_y = event.y
+
+    def stop_drag(self, event):
+        if hasattr(self, 'last_x') and hasattr(self, 'last_y'):
+            del self.last_x
+            del self.last_y
+
+    def bind_mouse_drag_events(self):
+        self.imageSpace.bind("<ButtonPress-1>", self.start_drag)
+        self.imageSpace.bind("<B1-Motion>", self.drag_image)
+        self.imageSpace.bind("<ButtonRelease-1>", self.stop_drag)
+
+    def reloadOriginalJPG(self):
+        print("OK")
