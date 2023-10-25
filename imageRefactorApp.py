@@ -203,30 +203,17 @@ class ImageRefactorApp:
     def greyConversion(self, adjusted=False):
         if self.image:
             # Zrobienie sredniej z wyswietlanych pixeli na ekranie
-            # width, height = self.image.size
-            # for x in range(width):
-            #     for y in range(height):
-            #         pixel = self.image.getpixel((x, y))
-            #         if adjusted:
-            #             average = 0.299 * pixel[0] + 0.587 * pixel[1] + 0.114 * pixel[2]
-            #         else:
-            #             average = (pixel[0] + pixel[1] + pixel[2]) / 3
-            #         self.image.putpixel((x, y), (round(average), round(average), round(average)))
-
-            # print(self.pixels)
-            # Zrobienie sredniej z pixeli
-            if adjusted:
-                weights = np.array([0.299, 0.587, 0.114])
-            else:
-                weights = np.array([1, 1, 1])
-            average = np.average(self.pixels, axis=2, weights=weights, keepdims=True)
-            self.pixels[:, :, :] = average
-
-            print(self.pixels)
-
-            limitedPixels = np.clip(self.pixels, 0, 255).astype(np.uint8)
-            self.image = Image.fromarray(np.uint8(limitedPixels))
-            self.tk_image = ImageTk.PhotoImage(self.image)
+            width, height = self.image.size
+            for x in range(width):
+                for y in range(height):
+                    pixel = self.image.getpixel((x, y))
+                    if adjusted:
+                        average = 0.299 * pixel[0] + 0.587 * pixel[1] + 0.114 * pixel[2]
+                    else:
+                        average = (pixel[0] + pixel[1] + pixel[2]) / 3
+                    self.image.putpixel((x, y), (round(average), round(average), round(average)))
+                    # Ustawienie wartosci pixeli na srednia
+                    self.pixels[y, x] = (round(average), round(average), round(average))
             self.show_image()
 
     def simpleRGBOperation(self, operator):
