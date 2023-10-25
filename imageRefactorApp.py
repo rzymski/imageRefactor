@@ -237,10 +237,6 @@ class ImageRefactorApp:
             elif (red_change and red_change == 0 or green_change and green_change == 0 or blue_change and blue_change == 0) and operator == '/':
                 print("Nie mozna dzielic przez 0")
                 return
-
-            # width, height = self.image.size
-            # self.pixels = np.array(self.image, dtype=np.int32)  # Convert the image to a NumPy array for faster pixel access
-            # print(self.pixels)
             if operator == '+':
                 self.pixels[:, :, 0] = self.pixels[:, :, 0] + red_change if red_change is not None else self.pixels[:, :, 0]
                 self.pixels[:, :, 1] = self.pixels[:, :, 1] + green_change if green_change is not None else self.pixels[:, :, 1]
@@ -262,14 +258,7 @@ class ImageRefactorApp:
                     self.pixels[:, :, 2] = self.pixels[:, :, 2] / blue_change
             else:
                 raise Exception(f"Nie właściwy operator. Nie ma operatora: {operator}")
-            # print("WYKONALO SIE")
-            # print(self.pixels)
-            # limitedPixels = np.clip(self.pixels[:, :, :], 0, 255)
             limitedPixels = np.clip(self.pixels, 0, 255).astype(np.uint8)
-            # print("Limitacja")
-            # print(limitedPixels)
-            # print("AKTUALNE")
-            # print(self.pixels)
             self.image = Image.fromarray(np.uint8(limitedPixels))
             self.tk_image = ImageTk.PhotoImage(self.image)
             self.show_image()
@@ -368,7 +357,7 @@ class ImageRefactorApp:
         if hasattr(self, 'last_x') and hasattr(self, 'last_y'):
             dx = event.x - self.last_x
             dy = event.y - self.last_y
-            self.move_image(event, dx, dy)
+            self.move_image(event, dx, dy, False)
             self.last_x = event.x
             self.last_y = event.y
 
@@ -410,19 +399,20 @@ class ImageRefactorApp:
         self.imageSpace.scale(self.imageId, x, y, scale, scale)
         self.show_image()
 
-    def move_image(self, event, dx, dy):
+    def move_image(self, event, dx, dy, scaleMoving=False):
         if self.imageId is not None:
-            dx *= self.imscale*2
-            dy *= self.imscale*2
+            if scaleMoving:
+                dx *= self.imscale*2
+                dy *= self.imscale*2
             self.movedX += dx
             self.movedY += dy
             self.imageSpace.move(self.imageId, dx, dy)
 
     def bind_keyboard_events(self):
-        self.root.bind("<Left>", lambda event: self.move_image(event, dx=10, dy=0))
-        self.root.bind("<Right>", lambda event: self.move_image(event, dx=-10, dy=0))
-        self.root.bind("<Up>", lambda event: self.move_image(event, dx=0, dy=10))
-        self.root.bind("<Down>", lambda event: self.move_image(event, dx=0, dy=-10))
+        self.root.bind("<Left>", lambda event: self.move_image(event, dx=10, dy=0, scaleMoving=True))
+        self.root.bind("<Right>", lambda event: self.move_image(event, dx=-10, dy=0, scaleMoving=True))
+        self.root.bind("<Up>", lambda event: self.move_image(event, dx=0, dy=10, scaleMoving=True))
+        self.root.bind("<Down>", lambda event: self.move_image(event, dx=0, dy=-10, scaleMoving=True))
 
     def on_mouse_move(self, event):
         # image_coords = self.imageSpace.coords(self.imageId)
