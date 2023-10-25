@@ -153,6 +153,79 @@ class ImageRefactorApp:
         else:
             print("Nie ma takiej operacji")
 
+    def convertRGBtoHSV(self, r, g, b):
+        r, g, b = r / 255.0, g / 255.0, b / 255.0
+        max_color = max(r, g, b)
+        min_color = min(r, g, b)
+        # Calculate the hue
+        if max_color == min_color:
+            h = 0  # No hue
+        elif max_color == r:
+            h = (60 * ((g - b) / (max_color - min_color)) + 360) % 360
+        elif max_color == g:
+            h = (60 * ((b - r) / (max_color - min_color)) + 120) % 360
+        else:  # max_color == b
+            h = (60 * ((r - g) / (max_color - min_color)) + 240) % 360
+        # Calculate the saturation
+        if max_color == 0:
+            s = 0
+        else:
+            s = (max_color - min_color) / max_color * 100
+        # Calculate the value
+        v = max_color * 100
+        return h, s, v
+
+    def convertHSVtoRGB(self, h, s, v):
+        s /= 100
+        v /= 100
+        c = v * s
+        x = c * (1-abs((h/60) % 2 - 1))
+        m = v - c
+        if 0 <= h < 60:
+            r, g, b = c, x, 0
+        elif 60 <= h < 120:
+            r, g, b = x, c, 0
+        elif 120 <= h < 180:
+            r, g, b = 0, c, x
+        elif 180 <= h < 240:
+            r, g, b = 0, x, c
+        elif 240 <= h < 300:
+            r, g, b = x, 0, c
+        elif 300 <= h < 360:
+            r, g, b = c, 0, x
+        else:
+            raise Exception("H poza zakresem")
+        r, g, b = round((r+m)*255), round((g+m)*255), round((b+m)*255)
+        return r, g, b
+
+    #nie dokładne albo zle
+    # def convertHSVtoRGB(self, h, s, v):
+    #     h /= 360
+    #     s /= 100
+    #     v /= 100
+    #     if s == 0:
+    #         r = g = b = round(v * 255)
+    #     else:
+    #         h /= 60
+    #         i = round(h)
+    #         f = h - i
+    #         p = round(255 * (v * (1 - s)))
+    #         q = round(255 * (v * (1 - s * f)))
+    #         t = round(255 * (v * (1 - s * (1 - f))))
+    #         if i == 0:
+    #             r, g, b = round(v * 255), t, p
+    #         elif i == 1:
+    #             r, g, b = q, round(v * 255), p
+    #         elif i == 2:
+    #             r, g, b = p, round(v * 255), t
+    #         elif i == 3:
+    #             r, g, b = p, q, round(v * 255)
+    #         elif i == 4:
+    #             r, g, b = t, p, round(v * 255)
+    #         else:
+    #             r, g, b = round(v * 255), p, q
+    #     return r, g, b
+
     def greyConversion(self, adjusted=False):
         if self.image:
             width, height = self.image.size
@@ -160,7 +233,7 @@ class ImageRefactorApp:
                 for y in range(height):
                     pixel = self.image.getpixel((x, y))
                     if adjusted:
-                        average = min(255, (0.299 * pixel[0] + 0.587 * pixel[1] + 0.114 * pixel[2]))
+                        average = 0.299 * pixel[0] + 0.587 * pixel[1] + 0.114 * pixel[2]
                     else:
                         average = (pixel[0] + pixel[1] + pixel[2]) / 3
                     self.image.putpixel((x, y), (round(average), round(average), round(average)))
