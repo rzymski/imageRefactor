@@ -71,7 +71,7 @@ class ImageRefactorApp:
         self.radioMultiplication.grid(row=2, column=0, sticky="W", columnspan=2)
         self.radioDivision = Radiobutton(self.pointOperationsLabel, text="Division", value="/", variable=self.operationType, command=self.onRadioButtonSelect)
         self.radioDivision.grid(row=3, column=0, sticky="W", columnspan=2)
-        self.radioBrightness = Radiobutton(self.pointOperationsLabel, text="Brightness change", value="brightness", variable=self.operationType, command=self.onRadioButtonSelect)
+        self.radioBrightness = Radiobutton(self.pointOperationsLabel, text="Lightness change", value="lightness", variable=self.operationType, command=self.onRadioButtonSelect)
         self.radioBrightness.grid(row=4, column=0, sticky="W", columnspan=2)
         self.radioGrayScale1 = Radiobutton(self.pointOperationsLabel, text="Gray Scale averaged", value="grayAverage", variable=self.operationType, command=self.onRadioButtonSelect)
         self.radioGrayScale1.grid(row=5, column=0, sticky="W", columnspan=2)
@@ -97,7 +97,7 @@ class ImageRefactorApp:
         self.blueChangeEntry.grid(row=2, column=1)
 
         self.lightChangeLabel = Label(self.parameterOperationsLabel, text="Light")
-        self.lightChangeEntry = Entry(self.parameterOperationsLabel)
+        self.lightChangeEntry = Entry(self.parameterOperationsLabel, validate='all', validatecommand=(vcmd, '%P'))
 
         self.imageSpace = Canvas(self.root, bg="white")
         self.imageSpace.pack(fill="both", expand=True)
@@ -135,7 +135,7 @@ class ImageRefactorApp:
             self.greenChangeEntry.grid(row=1, column=1)
             self.blueChangeLabel.grid(row=2, column=0, sticky="W")
             self.blueChangeEntry.grid(row=2, column=1)
-        elif value == 'brightness':
+        elif value == 'lightness':
             self.parameterOperationsLabel.grid(row=7, column=0, sticky="WE")
             self.lightChangeLabel.grid(row=0, column=0, sticky="W")
             self.lightChangeEntry.grid(row=0, column=1)
@@ -152,8 +152,47 @@ class ImageRefactorApp:
             self.greyConversion(False)
         elif self.operationType.get() == 'grayAdjust':
             self.greyConversion(True)
+        elif self.operationType.get() == 'lightness':
+            self.changeLightness()
         else:
             print("Nie ma takiej operacji")
+
+    # Wersja odczytujaca pixele z obrazka
+    # def changeLightness(self):
+    #     self.measureTime("START")
+    #
+    #     height, width = self.image.size
+    #     for x in range(height):
+    #         for y in range(width):
+    #             pixel = self.image.getpixel((x, y))
+    #             h, s, v = self.convertRGBtoHSV(pixel[0], pixel[1], pixel[2])
+    #             v *= np.clip(float(self.lightChangeEntry.get()), 0, 100)
+    #             r, g, b = self.convertHSVtoRGB(h, s, v)
+    #             self.image.putpixel((x, y), (r, g, b))
+    #             self.pixels[y, x] = (r, g, b)
+    #     self.show_image()
+    #
+    #     self.measureTime("END")
+    #     print("SKONCZYL")
+
+    def changeLightness(self):
+        self.measureTime("START")
+
+        height, width, _ = self.pixels.shape
+        #width, height = self.image.size
+        for x in range(height):
+            for y in range(width):
+                #pixel = self.image.getpixel((x, y))
+                pixel = self.pixels[x, y]
+                h, s, v = self.convertRGBtoHSV(pixel[0], pixel[1], pixel[2])
+                v *= np.clip(float(self.lightChangeEntry.get()), 0, 100)
+                r, g, b = self.convertHSVtoRGB(h, s, v)
+                self.image.putpixel((y, x), (r, g, b))
+                self.pixels[x, y] = (r, g, b)
+        self.show_image()
+
+        self.measureTime("END")
+        print("SKONCZYL")
 
     def convertRGBtoHSV(self, r, g, b):
         r, g, b = r / 255.0, g / 255.0, b / 255.0
@@ -265,15 +304,6 @@ class ImageRefactorApp:
             self.image = Image.fromarray(np.uint8(limitedPixels))
             self.tk_image = ImageTk.PhotoImage(self.image)
             self.show_image()
-
-    def get_pixel_color(self, x, y):
-        if self.image is not None:
-            try:
-                pixel = self.image.getpixel((x, y))
-                return pixel
-            except Exception as e:
-                print(f"Error getting pixel color: {e}")
-        return None
 
     def update_pixel_info_label(self, x, y, pixel_rgb):
         if pixel_rgb is not None:
@@ -431,11 +461,20 @@ class ImageRefactorApp:
                 self.update_pixel_info_label(int(x/self.imscale), int(y/self.imscale), pixel_rgb)
             elif self.pixelXEntry.get():
                 self.update_pixel_info_label(None, None, None)
+    
+    def get_pixel_color(self, x, y):
+        if self.image is not None:
+            try:
+                pixel = self.image.getpixel((x, y))
+                return pixel
+            except Exception as e:
+                print(f"Error getting pixel color: {e}")
+        return None
 
     def measureTime(self, startEnd):
-        if startEnd == "start":
+        if startEnd.lower() == "start":
             self.start_time = time.time()
-        elif startEnd == "end":
+        elif startEnd.lower() == "end":
             self.end_time = time.time()
             execution_time = self.end_time - self.start_time
             print(f"Czas wykonania funkcji: {execution_time} sekundy")
