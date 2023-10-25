@@ -227,8 +227,9 @@ class ImageRefactorApp:
                 blue_change = float(self.blueChangeEntry.get())
             except:
                 blue_change = None
+
             if red_change is None and green_change is None and blue_change is None:
-                print("SAME NONY")
+                print("SAME NONE")
                 return
             elif (red_change and red_change < 0 or green_change and green_change < 0 or blue_change and blue_change < 0) and (operator == '/' or operator == '*'):
                 print("Nie ma sensu mnożyć lub dzielić przez ujemne wartosci")
@@ -236,100 +237,42 @@ class ImageRefactorApp:
             elif (red_change and red_change == 0 or green_change and green_change == 0 or blue_change and blue_change == 0) and operator == '/':
                 print("Nie mozna dzielic przez 0")
                 return
-            #print(f"{red_change} {green_change} {blue_change}")
-            width, height = self.image.size
-            if self.pixels is None:
-                self.pixels = np.zeros((height * width, 3), dtype=np.uint8)
 
-            print(self.pixels)
-            print("TERAZ POJEDYNCZE")
-
-            for i in range(len(self.pixels)):
-                pixel = self.pixels[i]
-                print(pixel)
-                if operator == '+':
-                    new_red = min(255, max(0, pixel[0] + red_change)) if red_change is not None else pixel[0]
-                    new_green = min(255, max(0, pixel[1] + green_change)) if green_change is not None else pixel[1]
-                    new_blue = min(255, max(0, pixel[2] + blue_change)) if blue_change is not None else pixel[2]
-                elif operator == '-':
-                    new_red = min(255, max(0, pixel[0] - red_change)) if red_change is not None else pixel[0]
-                    new_green = min(255, max(0, pixel[1] - green_change)) if green_change is not None else pixel[1]
-                    new_blue = min(255, max(0, pixel[2] - blue_change)) if blue_change is not None else pixel[2]
-                elif operator == '*':
-                    new_red = min(255, max(0, pixel[0] * red_change)) if red_change is not None else pixel[0]
-                    new_green = min(255, max(0, pixel[1] * green_change)) if green_change is not None else pixel[1]
-                    new_blue = min(255, max(0, pixel[2] * blue_change)) if blue_change is not None else pixel[2]
-                elif operator == '/':
-                    new_red = min(255, max(0, pixel[0] / red_change)) if red_change is not None else pixel[0]
-                    new_green = min(255, max(0, pixel[1] / green_change)) if green_change is not None else pixel[1]
-                    new_blue = min(255, max(0, pixel[2] / blue_change)) if blue_change is not None else pixel[2]
-                else:
-                    raise Exception(f"Nie właściwy operator. Nie ma operatora: {operator}")
-                #self.image.putpixel((x, y), (round(new_red), round(new_green), round(new_blue)))
-                # self.pixels[i, 0] = new_red
-                # self.pixels[i, 1] = new_green
-                # self.pixels[i, 2] = new_blue
-                self.pixels[i] = pixel
-
-
-            modified_image = Image.frombytes(mode="RGB", size=(width, height), data=bytes(self.pixels))
-            self.image = modified_image
+            # width, height = self.image.size
+            # self.pixels = np.array(self.image, dtype=np.int32)  # Convert the image to a NumPy array for faster pixel access
+            # print(self.pixels)
+            if operator == '+':
+                self.pixels[:, :, 0] = self.pixels[:, :, 0] + red_change if red_change is not None else self.pixels[:, :, 0]
+                self.pixels[:, :, 1] = self.pixels[:, :, 1] + green_change if green_change is not None else self.pixels[:, :, 1]
+                self.pixels[:, :, 2] = self.pixels[:, :, 2] + blue_change if blue_change is not None else self.pixels[:, :, 2]
+            elif operator == '-':
+                self.pixels[:, :, 0] = self.pixels[:, :, 0] - red_change if red_change is not None else self.pixels[:, :, 0]
+                self.pixels[:, :, 1] = self.pixels[:, :, 1] - green_change if green_change is not None else self.pixels[:, :, 1]
+                self.pixels[:, :, 2] = self.pixels[:, :, 2] - blue_change if blue_change is not None else self.pixels[:, :, 2]
+            elif operator == '*':
+                self.pixels[:, :, 0] = self.pixels[:, :, 0] * red_change if red_change is not None else self.pixels[:, :, 0]
+                self.pixels[:, :, 1] = self.pixels[:, :, 1] * green_change if green_change is not None else self.pixels[:, :, 1]
+                self.pixels[:, :, 2] = self.pixels[:, :, 2] * blue_change if blue_change is not None else self.pixels[:, :, 2]
+            elif operator == '/':
+                if red_change:
+                    self.pixels[:, :, 0] = self.pixels[:, :, 0] / red_change
+                if green_change:
+                    self.pixels[:, :, 1] = self.pixels[:, :, 1] / green_change
+                if blue_change:
+                    self.pixels[:, :, 2] = self.pixels[:, :, 2] / blue_change
+            else:
+                raise Exception(f"Nie właściwy operator. Nie ma operatora: {operator}")
+            # print("WYKONALO SIE")
+            # print(self.pixels)
+            # limitedPixels = np.clip(self.pixels[:, :, :], 0, 255)
+            limitedPixels = np.clip(self.pixels, 0, 255).astype(np.uint8)
+            # print("Limitacja")
+            # print(limitedPixels)
+            # print("AKTUALNE")
+            # print(self.pixels)
+            self.image = Image.fromarray(np.uint8(limitedPixels))
             self.tk_image = ImageTk.PhotoImage(self.image)
             self.show_image()
-
-    # def simpleRGBOperation(self, operator):
-    #     if self.image:
-    #         try:
-    #             red_change = float(self.redChangeEntry.get())
-    #         except:
-    #             red_change = None
-    #         try:
-    #             green_change = float(self.greenChangeEntry.get())
-    #         except:
-    #             green_change = None
-    #         try:
-    #             blue_change = float(self.blueChangeEntry.get())
-    #         except:
-    #             blue_change = None
-    #
-    #         if red_change is None and green_change is None and blue_change is None:
-    #             print("SAME NONE")
-    #             return
-    #         elif (red_change and red_change < 0 or green_change and green_change < 0 or blue_change and blue_change < 0) and (operator == '/' or operator == '*'):
-    #             print("Nie ma sensu mnożyć lub dzielić przez ujemne wartosci")
-    #             return
-    #         elif (red_change and red_change == 0 or green_change and green_change == 0 or blue_change and blue_change == 0) and operator == '/':
-    #             print("Nie mozna dzielic przez 0")
-    #             return
-    #
-    #         width, height = self.image.size
-    #         self.pixels = np.array(self.image)  # Convert the image to a NumPy array for faster pixel access
-    #         if operator == '+':
-    #             self.pixels[:, :, 0] = np.clip(self.pixels[:, :, 0] + red_change, 0, 255) if red_change is not None else self.pixels[:, :, 0]
-    #             self.pixels[:, :, 1] = np.clip(self.pixels[:, :, 1] + green_change, 0, 255) if green_change is not None else self.pixels[:, :, 1]
-    #             self.pixels[:, :, 2] = np.clip(self.pixels[:, :, 2] + blue_change, 0, 255) if blue_change is not None else self.pixels[:, :, 2]
-    #         elif operator == '-':
-    #             self.pixels[:, :, 0] = np.clip(self.pixels[:, :, 0] - red_change, 0, 255) if red_change is not None else self.pixels[:, :, 0]
-    #             self.pixels[:, :, 1] = np.clip(self.pixels[:, :, 1] - green_change, 0, 255) if green_change is not None else self.pixels[:, :, 1]
-    #             self.pixels[:, :, 2] = np.clip(self.pixels[:, :, 2] - blue_change, 0, 255) if blue_change is not None else self.pixels[:, :, 2]
-    #         elif operator == '*':
-    #             self.pixels[:, :, 0] = np.clip(self.pixels[:, :, 0] * red_change, 0, 255) if red_change is not None else self.pixels[:, :, 0]
-    #             self.pixels[:, :, 1] = np.clip(self.pixels[:, :, 1] * green_change, 0, 255) if green_change is not None else self.pixels[:, :, 1]
-    #             self.pixels[:, :, 2] = np.clip(self.pixels[:, :, 2] * blue_change, 0, 255) if blue_change is not None else self.pixels[:, :, 2]
-    #         elif operator == '/':
-    #             if red_change:
-    #                 self.pixels[:, :, 0] = np.clip(self.pixels[:, :, 0] / red_change, 0, 255)
-    #             if green_change:
-    #                 self.pixels[:, :, 1] = np.clip(self.pixels[:, :, 1] / green_change, 0, 255)
-    #             if blue_change:
-    #                 self.pixels[:, :, 2] = np.clip(self.pixels[:, :, 2] / blue_change, 0, 255)
-    #         else:
-    #             raise Exception(f"Nie właściwy operator. Nie ma operatora: {operator}")
-    #         print(self.pixels)
-    #         modified_image = Image.fromarray(np.uint8(self.pixels))
-    #         self.image = modified_image
-    #         self.tk_image = ImageTk.PhotoImage(self.image)
-    #         self.show_image()
 
     def get_pixel_color(self, x, y):
         if self.image is not None:
@@ -390,7 +333,8 @@ class ImageRefactorApp:
             return
         self.image = Image.open(filePath)
         # self.pixels = list(self.image.getdata())
-        self.pixels = np.array(self.image.getdata())
+        # self.pixels = np.array(self.image.getdata(), dtype=np.int32)
+        self.pixels = np.array(self.image, dtype=np.int32)
         self.originalImage = deepcopy(self.image)
         if self.image is None:
             return
@@ -403,7 +347,6 @@ class ImageRefactorApp:
         print(self.image)
         if self.image is None:
             return
-        print("DZIALA")
         self.tk_image = ImageTk.PhotoImage(self.image)
         self.settingsAfterLoad()
 

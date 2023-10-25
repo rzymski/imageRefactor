@@ -5,12 +5,6 @@ if __name__ == "__main__":
     app = ImageRefactorApp(root)
     root.mainloop()
 
-
-
-
-
-
-
 # r, g, b = 232, 255, 254
 # root = tk.Tk()
 # app = ImageRefactorApp(root)
