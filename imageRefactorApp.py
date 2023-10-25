@@ -157,33 +157,15 @@ class ImageRefactorApp:
         else:
             print("Nie ma takiej operacji")
 
-    # Wersja odczytujaca pixele z obrazka
-    # def changeLightness(self):
-    #     self.measureTime("START")
-    #
-    #     height, width = self.image.size
-    #     for x in range(height):
-    #         for y in range(width):
-    #             pixel = self.image.getpixel((x, y))
-    #             h, s, v = self.convertRGBtoHSV(pixel[0], pixel[1], pixel[2])
-    #             v *= np.clip(float(self.lightChangeEntry.get()), 0, 100)
-    #             r, g, b = self.convertHSVtoRGB(h, s, v)
-    #             self.image.putpixel((x, y), (r, g, b))
-    #             self.pixels[y, x] = (r, g, b)
-    #     self.show_image()
-    #
-    #     self.measureTime("END")
-    #     print("SKONCZYL")
 
     def changeLightness(self):
         self.measureTime("START")
 
         height, width, _ = self.pixels.shape
-        #width, height = self.image.size
         for x in range(height):
             for y in range(width):
-                #pixel = self.image.getpixel((x, y))
                 pixel = self.pixels[x, y]
+                print(pixel)
                 h, s, v = self.convertRGBtoHSV(pixel[0], pixel[1], pixel[2])
                 v *= np.clip(float(self.lightChangeEntry.get()), 0, 100)
                 r, g, b = self.convertHSVtoRGB(h, s, v)
