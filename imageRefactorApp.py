@@ -10,13 +10,11 @@ import re
 
 import numpy as np
 
-
 class RGB:
     def __init__(self, r, g, b):
         self.r = r
         self.g = g
         self.b = b
-
 
 class HSV:
     def __init__(self, h, s, v):
@@ -225,24 +223,27 @@ class ImageRefactorApp:
     def changeLightness(self):
         self.measureTime("START")
 
+        # for r in range(256):
+        #     for g in range(256):
+        #         for b in range(256):
+        #             rgb_color = RGB(r / 255, g / 255, b / 255)
+        #             hsv_color = self.RGB2HSV(rgb_color)
+        #             hsv_color.v *= max(0, min(255, float(self.lightChangeEntry.get())))
+        #             new_rgb_color = self.HSV2RGB(hsv_color)
+
         height, width, _ = self.pixels.shape
         for x in range(height):
             for y in range(width):
                 pixel = self.pixels[x, y]
                 # print(pixel)
-
-                # h, s, v = self.convertRGBtoHSV(pixel[0], pixel[1], pixel[2])
-                # v *= np.clip(float(self.lightChangeEntry.get()), 0, 100)
-                # r, g, b = self.convertHSVtoRGB(h, s, v)
+                h, s, v = self.convertRGBtoHSV(pixel[0], pixel[1], pixel[2])
+                v *= max(0, min(255, float(self.lightChangeEntry.get())))
+                r, g, b = self.convertHSVtoRGB(h, s, v)
                 # self.image.putpixel((y, x), (r, g, b))
-                # self.pixels[x, y] = (r, g, b)
-
-                rgbPixel = RGB(pixel[0], pixel[1], pixel[2])
-                hsvPixel = self.RGB2HSV(rgbPixel)
-                hsvPixel.v *= np.clip(float(self.lightChangeEntry.get()), 0, 100)
-                rgb = self.HSV2RGB(hsvPixel)
-                self.image.putpixel((y, x), (round(rgb.r), round(rgb.g), round(rgb.b)))
-                self.pixels[x, y] = (round(rgb.r), round(rgb.g), round(rgb.b))
+                self.pixels[x, y] = (r, g, b)
+        limitedPixels = np.clip(self.pixels, 0, 255).astype(np.uint8)
+        self.image = Image.fromarray(np.uint8(limitedPixels))
+        self.tk_image = ImageTk.PhotoImage(self.image)
         self.show_image()
 
         self.measureTime("END")
@@ -290,10 +291,11 @@ class ImageRefactorApp:
             r, g, b = c, 0, x
         else:
             raise Exception("H poza zakresem")
-        r, g, b = round((r+m)*255), round((g+m)*255), round((b+m)*255)
+        r, g, b = int((r+m)*255), int((g+m)*255), int((b+m)*255)
         return r, g, b
 
     def greyConversion(self, adjusted=False):
+        self.measureTime("START")
         if self.image:
             # Zrobienie sredniej z wyswietlanych pixeli na ekranie
             width, height = self.image.size
@@ -304,12 +306,17 @@ class ImageRefactorApp:
                         average = 0.299 * pixel[0] + 0.587 * pixel[1] + 0.114 * pixel[2]
                     else:
                         average = (pixel[0] + pixel[1] + pixel[2]) / 3
-                    self.image.putpixel((x, y), (round(average), round(average), round(average)))
                     # Ustawienie wartosci pixeli na srednia
                     self.pixels[y, x] = (round(average), round(average), round(average))
+                    # self.image.putpixel((x, y), (round(average), round(average), round(average)))
+            limitedPixels = np.clip(self.pixels, 0, 255).astype(np.uint8)
+            self.image = Image.fromarray(np.uint8(limitedPixels))
+            self.tk_image = ImageTk.PhotoImage(self.image)
             self.show_image()
+        self.measureTime("END")
 
     def simpleRGBOperation(self, operator):
+        self.measureTime("START")
         if self.image:
             try:
                 red_change = float(self.redChangeEntry.get())
@@ -358,6 +365,7 @@ class ImageRefactorApp:
             self.image = Image.fromarray(np.uint8(limitedPixels))
             self.tk_image = ImageTk.PhotoImage(self.image)
             self.show_image()
+        self.measureTime("END")
 
     def update_pixel_info_label(self, x, y, pixel_rgb):
         if pixel_rgb is not None:

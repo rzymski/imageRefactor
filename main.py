@@ -6,29 +6,38 @@ if __name__ == "__main__":
     root.mainloop()
 
 
-# # import time
-# #
-# # root = tk.Tk()
-# # app = ImageRefactorApp(root)
-# # st = time.time()
-# # for r in range(256):
-# #     for g in range(256):
-# #         for b in range(256):
-# #             h, s, v = app.convertRGBtoHSV(r, g, b)
-# #             if 0 > h >= 360:
-# #                 raise Exception("H NIE PASUJE")
-# #             if 0 > s > 100 or 0 > v > 100:
-# #                 raise Exception("S lub V nie pasuje")
-# #             r2, g2, b2 = app.convertHSVtoRGB(h, s, v)
-# #             if 0 > r2 > 256 or 0 > g2 > 256 or 0 > b2 > 256:
-# #                 raise Exception("R2 lub G2 lub B2 nie pasuje")
-# #             if r != r2 or g != g2 or b != b2:
-# #                 print(f"STARE RGB ={r} {g} {b}\n NOWE RGB = {r2} {g2} {b2}")
-# # end = time.time()
-# # timedelta = end - st
-# # print(f"Czas: {timedelta}")
-#
-#
+import time
+
+# st = time.time()
+# f = 1.534234234234
+# for i in range(10000000):
+#     f *= i
+#     intF = int(f)
+# end = time.time()
+# timedelta = end - st
+# print(f"Czas: {timedelta}")
+
+# root = tk.Tk()
+# app = ImageRefactorApp(root)
+# st = time.time()
+# for r in range(256):
+#     for g in range(256):
+#         for b in range(256):
+#             h, s, v = app.convertRGBtoHSV(r, g, b)
+#             if 0 > h >= 360:
+#                 raise Exception("H NIE PASUJE")
+#             if 0 > s > 100 or 0 > v > 100:
+#                 raise Exception("S lub V nie pasuje")
+#             r2, g2, b2 = app.convertHSVtoRGB(h, s, v)
+#             if 0 > r2 > 256 or 0 > g2 > 256 or 0 > b2 > 256:
+#                 raise Exception("R2 lub G2 lub B2 nie pasuje")
+#             if r != r2 or g != g2 or b != b2:
+#                 print(f"STARE RGB ={r} {g} {b}\n NOWE RGB = {r2} {g2} {b2}")
+# end = time.time()
+# timedelta = end - st
+# print(f"Czas: {timedelta}")
+
+
 # class RGB:
 #     def __init__(self, r, g, b):
 #         self.r = r
@@ -93,24 +102,13 @@ if __name__ == "__main__":
 #     return output
 #
 #
-# # st = time.time()
-# # for r in range(256):
-# #     for g in range(256):
-# #         for b in range(256):
-# #             rgb_color = RGB(r / 255, g / 255, b / 255)
-# #             hsv_color = RGB2HSV(rgb_color)
-# #             new_rgb_color = HSV2RGB(hsv_color)
-# # end = time.time()
-# # timedelta = end - st
-# # print(f"Czas: {timedelta}")
-#
-#
-#
-# # Example usage:
-# r, g, b = 0, 0, 0
-# rgb_color = RGB(r/255, g/255, b/255)
-# hsv_color = RGB2HSV(rgb_color)
-# print("RGB to HSV:", hsv_color.h, hsv_color.s, hsv_color.v)
-#
-# new_rgb_color = HSV2RGB(hsv_color)
-# print("HSV to RGB:", new_rgb_color.r*255, new_rgb_color.g*255, new_rgb_color.b*255)
+# st = time.time()
+# for r in range(256):
+#     for g in range(256):
+#         for b in range(256):
+#             rgb_color = RGB(r / 255, g / 255, b / 255)
+#             hsv_color = RGB2HSV(rgb_color)
+#             new_rgb_color = HSV2RGB(hsv_color)
+# end = time.time()
+# timedelta = end - st
+# print(f"Czas: {timedelta}")
