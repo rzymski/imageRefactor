@@ -298,17 +298,16 @@ class ImageRefactorApp:
         self.measureTime("START")
         if self.image:
             # Zrobienie sredniej z wyswietlanych pixeli na ekranie
-            width, height = self.image.size
-            for x in range(width):
-                for y in range(height):
-                    pixel = self.image.getpixel((x, y))
-                    if adjusted:
-                        average = 0.299 * pixel[0] + 0.587 * pixel[1] + 0.114 * pixel[2]
-                    else:
-                        average = (pixel[0] + pixel[1] + pixel[2]) / 3
-                    # Ustawienie wartosci pixeli na srednia
-                    self.pixels[y, x] = (round(average), round(average), round(average))
-                    # self.image.putpixel((x, y), (round(average), round(average), round(average)))
+            if adjusted:
+                averages = 0.299 * self.pixels[:, :, 0] + 0.587 * self.pixels[:, :, 1] + 0.114 * self.pixels[:, :, 2]
+                self.pixels[:, :, 0] = averages
+                self.pixels[:, :, 1] = averages
+                self.pixels[:, :, 2] = averages
+            else:
+                averages = (self.pixels[:, :, 0] + self.pixels[:, :, 1] + self.pixels[:, :, 2]) / 3
+                self.pixels[:, :, 0] = averages
+                self.pixels[:, :, 1] = averages
+                self.pixels[:, :, 2] = averages
             limitedPixels = np.clip(self.pixels, 0, 255).astype(np.uint8)
             self.image = Image.fromarray(np.uint8(limitedPixels))
             self.tk_image = ImageTk.PhotoImage(self.image)
@@ -426,9 +425,8 @@ class ImageRefactorApp:
         self.settingsAfterLoad()
 
     def reloadOriginalJPG(self):
-        print(self.image)
         self.image = deepcopy(self.originalImage)
-        print(self.image)
+        self.pixels = np.array(self.image, dtype=np.int32)
         if self.image is None:
             return
         self.tk_image = ImageTk.PhotoImage(self.image)
