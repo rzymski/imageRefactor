@@ -10,6 +10,20 @@ import re
 
 import numpy as np
 
+
+class RGB:
+    def __init__(self, r, g, b):
+        self.r = r
+        self.g = g
+        self.b = b
+
+
+class HSV:
+    def __init__(self, h, s, v):
+        self.h = h
+        self.s = s
+        self.v = v
+
 class ImageRefactorApp:
     def __init__(self, root):
         self.root = root
@@ -157,6 +171,56 @@ class ImageRefactorApp:
         else:
             print("Nie ma takiej operacji")
 
+    def RGB2HSV(self, input):
+        output = HSV(None, None, None)
+        min_val = min(input.r, input.g, input.b)
+        max_val = max(input.r, input.g, input.b)
+        delta = max_val - min_val
+        output.v = max_val
+        if delta < 0.00001:
+            output.s = 0
+            output.h = 0
+            return output
+        if max_val > 0.0:
+            output.s = delta / max_val  # s
+        else:
+            output.s = 0.0
+            output.h = float('nan')  # it's now undefined
+            return output
+        if input.r >= max_val:
+            output.h = (input.g - input.b) / delta  # between yellow & magenta
+        elif input.g >= max_val:
+            output.h = 2.0 + (input.b - input.r) / delta  # between cyan & yellow
+        else:
+            output.h = 4.0 + (input.r - input.g) / delta  # between magenta & cyan
+        output.h *= 60.0  # degrees
+        if output.h < 0.0:
+            output.h += 360.0
+        return output
+
+    def HSV2RGB(self, input):
+        hh = input.h
+        if hh >= 360.0:
+            hh = 0.0
+        hh /= 60.0
+        i = int(hh)
+        ff = hh - i
+        p = input.v * (1.0 - input.s)
+        q = input.v * (1.0 - (input.s * ff))
+        t = input.v * (1.0 - (input.s * (1.0 - ff)))
+        if i == 0:
+            output = RGB(input.v, t, p)
+        elif i == 1:
+            output = RGB(q, input.v, p)
+        elif i == 2:
+            output = RGB(p, input.v, t)
+        elif i == 3:
+            output = RGB(p, q, input.v)
+        elif i == 4:
+            output = RGB(t, p, input.v)
+        else:
+            output = RGB(input.v, p, q)
+        return output
 
     def changeLightness(self):
         self.measureTime("START")
@@ -165,12 +229,20 @@ class ImageRefactorApp:
         for x in range(height):
             for y in range(width):
                 pixel = self.pixels[x, y]
-                print(pixel)
-                h, s, v = self.convertRGBtoHSV(pixel[0], pixel[1], pixel[2])
-                v *= np.clip(float(self.lightChangeEntry.get()), 0, 100)
-                r, g, b = self.convertHSVtoRGB(h, s, v)
-                self.image.putpixel((y, x), (r, g, b))
-                self.pixels[x, y] = (r, g, b)
+                # print(pixel)
+
+                # h, s, v = self.convertRGBtoHSV(pixel[0], pixel[1], pixel[2])
+                # v *= np.clip(float(self.lightChangeEntry.get()), 0, 100)
+                # r, g, b = self.convertHSVtoRGB(h, s, v)
+                # self.image.putpixel((y, x), (r, g, b))
+                # self.pixels[x, y] = (r, g, b)
+
+                rgbPixel = RGB(pixel[0], pixel[1], pixel[2])
+                hsvPixel = self.RGB2HSV(rgbPixel)
+                hsvPixel.v *= np.clip(float(self.lightChangeEntry.get()), 0, 100)
+                rgb = self.HSV2RGB(hsvPixel)
+                self.image.putpixel((y, x), (round(rgb.r), round(rgb.g), round(rgb.b)))
+                self.pixels[x, y] = (round(rgb.r), round(rgb.g), round(rgb.b))
         self.show_image()
 
         self.measureTime("END")
