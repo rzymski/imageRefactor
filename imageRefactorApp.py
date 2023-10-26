@@ -10,18 +10,6 @@ import re
 
 import numpy as np
 
-class RGB:
-    def __init__(self, r, g, b):
-        self.r = r
-        self.g = g
-        self.b = b
-
-class HSV:
-    def __init__(self, h, s, v):
-        self.h = h
-        self.s = s
-        self.v = v
-
 class ImageRefactorApp:
     def __init__(self, root):
         self.root = root
@@ -107,9 +95,26 @@ class ImageRefactorApp:
         self.blueChangeLabel.grid(row=2, column=0, sticky="W")
         self.blueChangeEntry = Entry(self.parameterOperationsLabel, validate='all', validatecommand=(vcmd, '%P'))
         self.blueChangeEntry.grid(row=2, column=1)
-
         self.lightChangeLabel = Label(self.parameterOperationsLabel, text="Light")
         self.lightChangeEntry = Entry(self.parameterOperationsLabel, validate='all', validatecommand=(vcmd, '%P'))
+        # LabelFrame for filters
+        self.filterLabel = LabelFrame(self.frame, text="Filters", padx=10, pady=10, labelanchor="nw")
+        self.filterLabel.grid(row=6, column=0, sticky="WE")
+        # RadioButtons for filters
+        self.filterType = StringVar()
+        self.filterType.set("0")
+        self.filterAverage = Radiobutton(self.filterLabel, text="Average filter", value="0", variable=self.filterType)
+        self.filterAverage.grid(row=0, column=0, sticky="W")
+        self.filterMedian = Radiobutton(self.filterLabel, text="Median filter", value="1", variable=self.filterType)
+        self.filterMedian.grid(row=1, column=0, sticky="W")
+        self.filterSobel = Radiobutton(self.filterLabel, text="Sobel filter", value="2", variable=self.filterType)
+        self.filterSobel.grid(row=2, column=0, sticky="W")
+        self.filterHighPassSharpening = Radiobutton(self.filterLabel, text="High pass sharpening filter", value="3", variable=self.filterType)
+        self.filterHighPassSharpening.grid(row=3, column=0, sticky="W")
+        self.filterGaussianBlur = Radiobutton(self.filterLabel, text="Gaussian Blur filter", value="4", variable=self.filterType)
+        self.filterGaussianBlur.grid(row=4, column=0, sticky="W")
+        self.filterSubmitButton = Button(self.filterLabel, text="Apply filter", command=self.applyFilter)
+        self.filterSubmitButton.grid(row=5, column=0, sticky="WE")
 
         self.imageSpace = Canvas(self.root, bg="white")
         self.imageSpace.pack(fill="both", expand=True)
@@ -156,8 +161,52 @@ class ImageRefactorApp:
         else:
             raise Exception("Nie ma takiej opcji")
 
+    def applyFilter(self):
+        print(f"Zastosowano filtr: {self.filterType.get()}")
+        if self.filterType.get() == '0':
+            self.averageFilter()
+        elif self.filterType.get() == '1':
+            self.medianFilter()
+        elif self.filterType.get() == '2':
+            self.sobelFilter()
+        elif self.filterType.get() == '3':
+            self.highPassSharpeningFilter()
+        elif self.filterType.get() == '4':
+            self.gaussianBlurFilter()
+        else:
+            raise Exception(f"Nie ma takiego filtra {self.filterType.get()}")
+
+    def averageFilter(self):
+        self.measureTime("START")
+        if self.image:
+            kernel = np.array([[1 / 9, 1 / 9, 1 / 9], [1 / 9, 1 / 9, 1 / 9], [1 / 9, 1 / 9, 1 / 9]])
+            height, width, _ = self.pixels.shape
+            smoothed_pixels = deepcopy(self.pixels)
+            for y in range(1, height - 1):
+                for x in range(1, width - 1):
+                    for c in range(3):  # Loop over R, G, and B channels
+                        smoothed_pixels[y, x, c] = np.sum(self.pixels[y - 1:y + 2, x - 1:x + 2, c] * kernel)
+                        # print(self.pixels[y - 1:y + 2, x - 1:x + 2, c])
+            smoothed_pixels = np.clip(smoothed_pixels, 0, 255).astype(np.uint8)
+            self.image = Image.fromarray(smoothed_pixels)
+            self.tk_image = ImageTk.PhotoImage(self.image)
+            self.show_image()
+        self.measureTime("END")
+
+    def medianFilter(self):
+        pass
+
+    def sobelFilter(self):
+        pass
+
+    def highPassSharpeningFilter(self):
+        pass
+
+    def gaussianBlurFilter(self):
+        pass
+
     def doPointTransformation(self):
-        print(f"OKej zrobił to: {self.operationType.get()}")
+        print(f"Wykonał: {self.operationType.get()}")
         if self.operationType.get() in ['+', '-', '*', '/']:
             self.simpleRGBOperation(self.operationType.get())
         elif self.operationType.get() == 'grayAverage':
@@ -168,77 +217,6 @@ class ImageRefactorApp:
             self.changeLightness()
         else:
             print("Nie ma takiej operacji")
-
-    def RGB2HSV(self, input):
-        output = HSV(None, None, None)
-        min_val = min(input.r, input.g, input.b)
-        max_val = max(input.r, input.g, input.b)
-        delta = max_val - min_val
-        output.v = max_val
-        if delta < 0.00001:
-            output.s = 0
-            output.h = 0
-            return output
-        if max_val > 0.0:
-            output.s = delta / max_val  # s
-        else:
-            output.s = 0.0
-            output.h = float('nan')  # it's now undefined
-            return output
-        if input.r >= max_val:
-            output.h = (input.g - input.b) / delta  # between yellow & magenta
-        elif input.g >= max_val:
-            output.h = 2.0 + (input.b - input.r) / delta  # between cyan & yellow
-        else:
-            output.h = 4.0 + (input.r - input.g) / delta  # between magenta & cyan
-        output.h *= 60.0  # degrees
-        if output.h < 0.0:
-            output.h += 360.0
-        return output
-
-    def HSV2RGB(self, input):
-        hh = input.h
-        if hh >= 360.0:
-            hh = 0.0
-        hh /= 60.0
-        i = int(hh)
-        ff = hh - i
-        p = input.v * (1.0 - input.s)
-        q = input.v * (1.0 - (input.s * ff))
-        t = input.v * (1.0 - (input.s * (1.0 - ff)))
-        if i == 0:
-            output = RGB(input.v, t, p)
-        elif i == 1:
-            output = RGB(q, input.v, p)
-        elif i == 2:
-            output = RGB(p, input.v, t)
-        elif i == 3:
-            output = RGB(p, q, input.v)
-        elif i == 4:
-            output = RGB(t, p, input.v)
-        else:
-            output = RGB(input.v, p, q)
-        return output
-
-    # def changeLightness(self):
-    #     self.measureTime("START")
-    #     height, width, _ = self.pixels.shape
-    #     for x in range(height):
-    #         for y in range(width):
-    #             pixel = self.pixels[x, y]
-    #             # print(pixel)
-    #             h, s, v = self.convertRGBtoHSV(pixel[0], pixel[1], pixel[2])
-    #             v *= max(0, min(255, float(self.lightChangeEntry.get())))
-    #             r, g, b = self.convertHSVtoRGB(h, s, v)
-    #             # self.image.putpixel((y, x), (r, g, b))
-    #             self.pixels[x, y] = (r, g, b)
-    #     limitedPixels = np.clip(self.pixels, 0, 255).astype(np.uint8)
-    #     self.image = Image.fromarray(np.uint8(limitedPixels))
-    #     self.tk_image = ImageTk.PhotoImage(self.image)
-    #     self.show_image()
-    #
-    #     self.measureTime("END")
-    #     print("SKONCZYL")
 
     def convertRGBtoHSV(self, r, g, b):
         r, g, b = r / 255.0, g / 255.0, b / 255.0
@@ -297,16 +275,6 @@ class ImageRefactorApp:
             self.pixels[:, :, 0] = r
             self.pixels[:, :, 1] = g
             self.pixels[:, :, 2] = b
-            # height, width, _ = self.pixels.shape
-            # for x in range(height):
-            #     for y in range(width):
-            #         pixel = self.pixels[x, y]
-            #         # print(pixel)
-            #         h, s, v = self.convertRGBtoHSV(pixel[0], pixel[1], pixel[2])
-            #         v *= max(0, min(255, float(self.lightChangeEntry.get())))
-            #         r, g, b = self.convertHSVtoRGB(h, s, v)
-            #         # self.image.putpixel((y, x), (r, g, b))
-            #         self.pixels[x, y] = (r, g, b)
             limitedPixels = np.clip(self.pixels, 0, 255).astype(np.uint8)
             self.image = Image.fromarray(np.uint8(limitedPixels))
             self.tk_image = ImageTk.PhotoImage(self.image)
@@ -435,8 +403,6 @@ class ImageRefactorApp:
         if filePath == '':
             return
         self.image = Image.open(filePath)
-        # self.pixels = list(self.image.getdata())
-        # self.pixels = np.array(self.image.getdata(), dtype=np.int32)
         self.pixels = np.array(self.image, dtype=np.int32)
         self.originalImage = deepcopy(self.image)
         if self.image is None:
@@ -454,12 +420,10 @@ class ImageRefactorApp:
 
     def saveJPG(self):
         if self.image:
-            compression_quality = simpledialog.askinteger("Compression Quality", "Enter quality (0-100):", minvalue=0, maxvalue=100)
-            if compression_quality is not None:
-                file_path = asksaveasfilename(initialfile='Untitled.jpg', defaultextension=".jpg", filetypes=[("JPEG files", "*.jpg")])
-                if file_path:
-                    self.image.save(file_path, "JPEG", quality=compression_quality)
-                    print(f"Image saved as {file_path} with compression quality {compression_quality}")
+            file_path = asksaveasfilename(initialfile='Untitled.jpg', defaultextension=".jpg", filetypes=[("JPEG files", "*.jpg")])
+            if file_path:
+                self.image.save(file_path, "JPEG")
+                print(f"Image saved as {file_path}")
 
     # przesuwanie obrazków myszką
     def start_drag(self, event):
