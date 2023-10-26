@@ -194,7 +194,19 @@ class ImageRefactorApp:
         self.measureTime("END")
 
     def medianFilter(self):
-        pass
+        self.measureTime("START")
+        if self.image:
+            height, width, _ = self.pixels.shape
+            smoothed_pixels = deepcopy(self.pixels)
+            for y in range(1, height - 1):
+                for x in range(1, width - 1):
+                    for c in range(3):  # Loop over R, G, and B channels
+                        smoothed_pixels[y, x, c] = np.median(self.pixels[y - 1:y + 2, x - 1:x + 2, c])
+            smoothed_pixels = np.clip(smoothed_pixels, 0, 255).astype(np.uint8)
+            self.image = Image.fromarray(smoothed_pixels)
+            self.tk_image = ImageTk.PhotoImage(self.image)
+            self.show_image()
+        self.measureTime("END")
 
     def sobelFilter(self):
         pass
