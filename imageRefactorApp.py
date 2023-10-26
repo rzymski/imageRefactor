@@ -1,5 +1,7 @@
 from tkinter import *
 # import tkinter as tk
+import customtkinter as ctk
+
 from PIL import Image, ImageTk
 from tkinter.filedialog import asksaveasfilename, askopenfilename
 import tkinter.simpledialog as simpledialog
@@ -61,8 +63,8 @@ class ImageRefactorApp:
         self.pointOperationsLabel = LabelFrame(self.frame, text="Point transformation", padx=10, pady=10, labelanchor="nw")
         self.pointOperationsLabel.grid(row=5, column=0, sticky="WE")
         # RadioButtons for operations
-        self.operationType = StringVar()
-        self.operationType.set("+")
+        self.operationType = StringVar(value="+")
+        # self.operationType.set("+")
         self.radioAddition = Radiobutton(self.pointOperationsLabel, text="Addition", value="+", variable=self.operationType, command=self.onRadioButtonSelect)
         self.radioAddition.grid(row=0, column=0, sticky="W", columnspan=2)
         self.radioSubtraction = Radiobutton(self.pointOperationsLabel, text="Subtraction", value="-", variable=self.operationType, command=self.onRadioButtonSelect)
@@ -101,20 +103,23 @@ class ImageRefactorApp:
         self.filterLabel = LabelFrame(self.frame, text="Filters", padx=10, pady=10, labelanchor="nw")
         self.filterLabel.grid(row=6, column=0, sticky="WE")
         # RadioButtons for filters
-        self.filterType = StringVar()
-        self.filterType.set("0")
+        self.filterType = StringVar(value="0")
+        # self.filterType.set("0")
+        self.switchState = StringVar(value="on")
+        self.optimizationSwitch = ctk.CTkSwitch(self.filterLabel, text="Optimization", variable=self.switchState, onvalue="on", offvalue="off", button_color="black")  # progress_color="blue"
+        self.optimizationSwitch.grid(row=0, column=0, sticky="WE")
         self.filterAverage = Radiobutton(self.filterLabel, text="Average filter", value="0", variable=self.filterType)
-        self.filterAverage.grid(row=0, column=0, sticky="W")
+        self.filterAverage.grid(row=1, column=0, sticky="W")
         self.filterMedian = Radiobutton(self.filterLabel, text="Median filter", value="1", variable=self.filterType)
-        self.filterMedian.grid(row=1, column=0, sticky="W")
+        self.filterMedian.grid(row=2, column=0, sticky="W")
         self.filterSobel = Radiobutton(self.filterLabel, text="Sobel filter", value="2", variable=self.filterType)
-        self.filterSobel.grid(row=2, column=0, sticky="W")
+        self.filterSobel.grid(row=3, column=0, sticky="W")
         self.filterHighPassSharpening = Radiobutton(self.filterLabel, text="High pass sharpening filter", value="3", variable=self.filterType)
-        self.filterHighPassSharpening.grid(row=3, column=0, sticky="W")
+        self.filterHighPassSharpening.grid(row=4, column=0, sticky="W")
         self.filterGaussianBlur = Radiobutton(self.filterLabel, text="Gaussian Blur filter", value="4", variable=self.filterType)
-        self.filterGaussianBlur.grid(row=4, column=0, sticky="W")
+        self.filterGaussianBlur.grid(row=5, column=0, sticky="W")
         self.filterSubmitButton = Button(self.filterLabel, text="Apply filter", command=self.applyFilter)
-        self.filterSubmitButton.grid(row=5, column=0, sticky="WE")
+        self.filterSubmitButton.grid(row=6, column=0, sticky="WE")
 
         self.imageSpace = Canvas(self.root, bg="white")
         self.imageSpace.pack(fill="both", expand=True)
@@ -162,11 +167,11 @@ class ImageRefactorApp:
             raise Exception("Nie ma takiej opcji")
 
     def applyFilter(self):
-        print(f"Zastosowano filtr: {self.filterType.get()}")
+        print(f"Zastosowano filtr: {self.filterType.get()} optymalizacja jest {self.switchState.get()}")
         if self.filterType.get() == '0':
-            self.averageFilter()
+            self.averageFilter() if self.switchState.get() == "off" else self.averageFilterOptimized()
         elif self.filterType.get() == '1':
-            self.medianFilter()
+            self.medianFilter() if self.switchState.get() == "off" else self.medianFilterOptimized()
         elif self.filterType.get() == '2':
             self.sobelFilter()
         elif self.filterType.get() == '3':
@@ -176,24 +181,26 @@ class ImageRefactorApp:
         else:
             raise Exception(f"Nie ma takiego filtra {self.filterType.get()}")
 
-    # def averageFilter(self):
-    #     self.measureTime("START")
-    #     if self.image:
-    #         kernel = np.array([[1 / 9, 1 / 9, 1 / 9], [1 / 9, 1 / 9, 1 / 9], [1 / 9, 1 / 9, 1 / 9]])
-    #         height, width, _ = self.pixels.shape
-    #         smoothed_pixels = deepcopy(self.pixels)
-    #         for y in range(1, height - 1):
-    #             for x in range(1, width - 1):
-    #                 for c in range(3):  # Loop over R, G, and B channels
-    #                     smoothed_pixels[y, x, c] = np.sum(self.pixels[y - 1:y + 2, x - 1:x + 2, c] * kernel)
-    #                     # print(self.pixels[y - 1:y + 2, x - 1:x + 2, c])
-    #         smoothed_pixels = np.clip(smoothed_pixels, 0, 255).astype(np.uint8)
-    #         self.image = Image.fromarray(smoothed_pixels)
-    #         self.tk_image = ImageTk.PhotoImage(self.image)
-    #         self.show_image()
-    #     self.measureTime("END")
-
     def averageFilter(self):
+        self.measureTime("START")
+        if self.image:
+            mask = np.array([[1 / 9, 1 / 9, 1 / 9], [1 / 9, 1 / 9, 1 / 9], [1 / 9, 1 / 9, 1 / 9]])
+            height, width, _ = self.pixels.shape
+            smoothed_pixels = deepcopy(self.pixels)
+            for y in range(1, height - 1):
+                for x in range(1, width - 1):
+                    for c in range(3):  # Loop over R, G, and B channels
+                        # smoothed_pixels[y, x, c] = np.average(self.pixels[y - 1:y + 2, x - 1:x + 2, c], weights=mask)
+                        smoothed_pixels[y, x, c] = np.average(self.pixels[y - 1:y + 2, x - 1:x + 2, c])
+                        # print(smoothed_pixels[y - 1:y + 2, x - 1:x + 2, c])
+            smoothed_pixels = np.clip(smoothed_pixels, 0, 255).astype(np.uint8)
+            self.pixels = smoothed_pixels
+            self.image = Image.fromarray(self.pixels)
+            self.tk_image = ImageTk.PhotoImage(self.image)
+            self.show_image()
+        self.measureTime("END")
+
+    def averageFilterOptimized(self):
         self.measureTime("START")
         if self.image:
             if self.pixels.shape < (3, 3, 3):
@@ -231,7 +238,36 @@ class ImageRefactorApp:
                     for c in range(3):  # Loop over R, G, and B channels
                         smoothed_pixels[y, x, c] = np.median(self.pixels[y - 1:y + 2, x - 1:x + 2, c])
             smoothed_pixels = np.clip(smoothed_pixels, 0, 255).astype(np.uint8)
-            self.image = Image.fromarray(smoothed_pixels)
+            self.pixels = smoothed_pixels
+            self.image = Image.fromarray(self.pixels)
+            self.tk_image = ImageTk.PhotoImage(self.image)
+            self.show_image()
+        self.measureTime("END")
+
+    def medianFilterOptimized(self):
+        self.measureTime("START")
+        if self.image:
+            if self.pixels.shape < (3, 3, 3):
+                print("Nie mozna nalozyc maski jesli wymiar obrazu jest ponizej 3x3")
+                return
+            # wyciecie wartosci czerwonych z pixeli
+            reds = self.pixels[:, :, 0]
+            redSquares = np.lib.stride_tricks.sliding_window_view(reds, (3, 3))  # stworzenie macierzy 3x3 z sasiadujacych wartosci
+            mediansOfRedSquares = np.median(redSquares, axis=(2, 3))  # wyliczenie mediany z kazdej macierzy
+            self.pixels[:, :, 0][1:-1, 1:-1] = mediansOfRedSquares  # przypisanie median do srodowych wartosci w macierzach
+            # wyciecie wartosci zielonych z pixeli
+            greens = self.pixels[:, :, 1]
+            greenSquares = np.lib.stride_tricks.sliding_window_view(greens, (3, 3))  # stworzenie macierzy 3x3 z sasiadujacych wartosci
+            mediansOfGreenSquares = np.median(greenSquares, axis=(2, 3))  # wyliczenie mediany z kazdej macierzy
+            self.pixels[:, :, 1][1:-1, 1:-1] = mediansOfGreenSquares  # przypisanie median do srodowych wartosci w macierzach
+            # wyciecie wartosci niebieskich z pixeli
+            blues = self.pixels[:, :, 2]
+            blueSquares = np.lib.stride_tricks.sliding_window_view(blues, (3, 3))  # stworzenie macierzy 3x3 z sasiadujacych wartosci
+            mediansOfBlueSquares = np.median(blueSquares, axis=(2, 3))  # wyliczenie mediany z kazdej macierzy
+            self.pixels[:, :, 2][1:-1, 1:-1] = mediansOfBlueSquares  # przypisanie median do srodowych wartosci w macierzach
+            # ograniczenie pixeli do wartosci od 0 do 255 oraz narysowanie obrazka
+            limitedPixels = np.clip(self.pixels, 0, 255).astype(np.uint8)
+            self.image = Image.fromarray(np.uint8(limitedPixels))
             self.tk_image = ImageTk.PhotoImage(self.image)
             self.show_image()
         self.measureTime("END")
