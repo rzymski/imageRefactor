@@ -233,10 +233,29 @@ class ImageRefactorApp:
         if self.image:
             height, width, _ = self.pixels.shape
             smoothed_pixels = deepcopy(self.pixels)
-            for y in range(1, height - 1):
-                for x in range(1, width - 1):
+            for y in range(0, height):
+                for x in range(0, width):
                     for c in range(3):  # Loop over R, G, and B channels
-                        smoothed_pixels[y, x, c] = np.median(self.pixels[y - 1:y + 2, x - 1:x + 2, c])
+                        if 0 < y < height-1 and 0 < x < width-1:  # srodek
+                            smoothed_pixels[y, x, c] = np.median(self.pixels[y - 1:y + 2, x - 1:x + 2, c])
+                        elif 0 < y < height-1 and 0 < x:  # krawedz prawa
+                            smoothed_pixels[y, x, c] = np.median(self.pixels[y - 1:y + 2, x - 1:x + 1, c])
+                        elif 0 < y < height-1 and x < width-1:  # krawedz lewa
+                            smoothed_pixels[y, x, c] = np.median(self.pixels[y - 1:y + 2, x:x + 2, c])
+                        elif 0 < y and 0 < x < width-1:  # dol
+                            smoothed_pixels[y, x, c] = np.median(self.pixels[y - 1:y + 1, x - 1:x + 2, c])
+                        elif y < height-1 and 0 < x < width-1:  # gora
+                            smoothed_pixels[y, x, c] = np.median(self.pixels[y:y + 2, x - 1:x + 2, c])
+                        elif x == 0 and y == 0:  # lewy gorny rog
+                            smoothed_pixels[y, x, c] = np.median(self.pixels[y:y + 2, x:x + 2, c])
+                        elif x == width-1 and y == 0:  # prawy gorny rog
+                            smoothed_pixels[y, x, c] = np.median(self.pixels[y:y + 2, x:x + 1, c])
+                        elif x == 0 and y == height-1:  # lewy dolny rog
+                            smoothed_pixels[y, x, c] = np.median(self.pixels[y-1:y + 1, x:x + 2, c])
+                        elif x == width-1 and y == height-1:  # prawy dolny rog
+                            smoothed_pixels[y, x, c] = np.median(self.pixels[y-1:y + 1, x-1:x + 1, c])
+                        else:
+                            print("Jest tylko jeden pixel")
             smoothed_pixels = np.clip(smoothed_pixels, 0, 255).astype(np.uint8)
             self.pixels = smoothed_pixels
             self.image = Image.fromarray(self.pixels)
@@ -247,30 +266,109 @@ class ImageRefactorApp:
     def medianFilterOptimized(self):
         self.measureTime("START")
         if self.image:
+            # filtrowanie krawedzi
+            height, width, _ = self.pixels.shape
+            smoothed_pixels = deepcopy(self.pixels)
+            for y in range(0, height):
+                for x in range(0, width):
+                    if y == 0 or y == height - 1 or x == 0 or x == width - 1:
+                        for c in range(3):  # Loop over R, G, and B channels
+                            if 0 < y < height - 1 and 0 < x:  # krawedz prawa
+                                smoothed_pixels[y, x, c] = np.median(self.pixels[y - 1:y + 2, x - 1:x + 1, c])
+                            elif 0 < y < height - 1 and x < width - 1:  # krawedz lewa
+                                smoothed_pixels[y, x, c] = np.median(self.pixels[y - 1:y + 2, x:x + 2, c])
+                            elif 0 < y and 0 < x < width - 1:  # dol
+                                smoothed_pixels[y, x, c] = np.median(self.pixels[y - 1:y + 1, x - 1:x + 2, c])
+                            elif y < height - 1 and 0 < x < width - 1:  # gora
+                                smoothed_pixels[y, x, c] = np.median(self.pixels[y:y + 2, x - 1:x + 2, c])
+                            elif x == 0 and y == 0:  # lewy gorny rog
+                                smoothed_pixels[y, x, c] = np.median(self.pixels[y:y + 2, x:x + 2, c])
+                            elif x == width - 1 and y == 0:  # prawy gorny rog
+                                smoothed_pixels[y, x, c] = np.median(self.pixels[y:y + 2, x:x + 1, c])
+                            elif x == 0 and y == height - 1:  # lewy dolny rog
+                                smoothed_pixels[y, x, c] = np.median(self.pixels[y - 1:y + 1, x:x + 2, c])
+                            elif x == width - 1 and y == height - 1:  # prawy dolny rog
+                                smoothed_pixels[y, x, c] = np.median(self.pixels[y - 1:y + 1, x - 1:x + 1, c])
             if self.pixels.shape < (3, 3, 3):
                 print("Nie mozna nalozyc maski jesli wymiar obrazu jest ponizej 3x3")
                 return
             # wyciecie wartosci czerwonych z pixeli
-            reds = self.pixels[:, :, 0]
-            redSquares = np.lib.stride_tricks.sliding_window_view(reds, (3, 3))  # stworzenie macierzy 3x3 z sasiadujacych wartosci
-            mediansOfRedSquares = np.median(redSquares, axis=(2, 3))  # wyliczenie mediany z kazdej macierzy
-            self.pixels[:, :, 0][1:-1, 1:-1] = mediansOfRedSquares  # przypisanie median do srodowych wartosci w macierzach
-            # wyciecie wartosci zielonych z pixeli
-            greens = self.pixels[:, :, 1]
-            greenSquares = np.lib.stride_tricks.sliding_window_view(greens, (3, 3))  # stworzenie macierzy 3x3 z sasiadujacych wartosci
-            mediansOfGreenSquares = np.median(greenSquares, axis=(2, 3))  # wyliczenie mediany z kazdej macierzy
-            self.pixels[:, :, 1][1:-1, 1:-1] = mediansOfGreenSquares  # przypisanie median do srodowych wartosci w macierzach
-            # wyciecie wartosci niebieskich z pixeli
-            blues = self.pixels[:, :, 2]
-            blueSquares = np.lib.stride_tricks.sliding_window_view(blues, (3, 3))  # stworzenie macierzy 3x3 z sasiadujacych wartosci
-            mediansOfBlueSquares = np.median(blueSquares, axis=(2, 3))  # wyliczenie mediany z kazdej macierzy
-            self.pixels[:, :, 2][1:-1, 1:-1] = mediansOfBlueSquares  # przypisanie median do srodowych wartosci w macierzach
+            reds, greens, blues = self.pixels[:, :, 0], self.pixels[:, :, 1], self.pixels[:, :, 2]
+            # stworzenie macierzy 3x3 z sasiadujacych wartosci
+            redSquares, greenSquares, blueSquares = np.lib.stride_tricks.sliding_window_view(reds, (3, 3)), np.lib.stride_tricks.sliding_window_view(greens, (3, 3)), np.lib.stride_tricks.sliding_window_view(blues, (3, 3))
+            # wyliczenie mediany z kazdej macierzy
+            mediansOfRedSquares, mediansOfGreenSquares, mediansOfBlueSquares = np.median(redSquares, axis=(2, 3)), np.median(greenSquares, axis=(2, 3)), np.median(blueSquares, axis=(2, 3))
+            # przypisanie median do srodowych wartosci w macierzach
+            self.pixels[:, :, 0][1:-1, 1:-1], self.pixels[:, :, 1][1:-1, 1:-1], self.pixels[:, :, 2][1:-1, 1:-1] = mediansOfRedSquares, mediansOfGreenSquares, mediansOfBlueSquares
+            #dodanie krawedzi fo pixeli
+            for y in range(0, height):
+                for x in range(0, width):
+                    if y == 0 or y == height - 1 or x == 0 or x == width - 1:
+                        for c in range(3):
+                            self.pixels[y, x, c] = smoothed_pixels[y, x, c]
             # ograniczenie pixeli do wartosci od 0 do 255 oraz narysowanie obrazka
             limitedPixels = np.clip(self.pixels, 0, 255).astype(np.uint8)
             self.image = Image.fromarray(np.uint8(limitedPixels))
             self.tk_image = ImageTk.PhotoImage(self.image)
             self.show_image()
         self.measureTime("END")
+
+    # def medianFilterOptimized(self):
+    #     self.measureTime("START")
+    #     if self.image:
+    #         # filtrowanie krawedzi
+    #         height, width, _ = self.pixels.shape
+    #         smoothed_pixels = deepcopy(self.pixels)
+    #         for y in range(0, height):
+    #             for x in range(0, width):
+    #                 if y == 0 or y == height - 1 or x == 0 or x == width - 1:
+    #                     for c in range(3):  # Loop over R, G, and B channels
+    #                         if 0 < y < height - 1 and 0 < x:  # krawedz prawa
+    #                             smoothed_pixels[y, x, c] = np.median(self.pixels[y - 1:y + 2, x - 1:x + 1, c])
+    #                         elif 0 < y < height - 1 and x < width - 1:  # krawedz lewa
+    #                             smoothed_pixels[y, x, c] = np.median(self.pixels[y - 1:y + 2, x:x + 2, c])
+    #                         elif 0 < y and 0 < x < width - 1:  # dol
+    #                             smoothed_pixels[y, x, c] = np.median(self.pixels[y - 1:y + 1, x - 1:x + 2, c])
+    #                         elif y < height - 1 and 0 < x < width - 1:  # gora
+    #                             smoothed_pixels[y, x, c] = np.median(self.pixels[y:y + 2, x - 1:x + 2, c])
+    #                         elif x == 0 and y == 0:  # lewy gorny rog
+    #                             smoothed_pixels[y, x, c] = np.median(self.pixels[y:y + 2, x:x + 2, c])
+    #                         elif x == width - 1 and y == 0:  # prawy gorny rog
+    #                             smoothed_pixels[y, x, c] = np.median(self.pixels[y:y + 2, x:x + 1, c])
+    #                         elif x == 0 and y == height - 1:  # lewy dolny rog
+    #                             smoothed_pixels[y, x, c] = np.median(self.pixels[y - 1:y + 1, x:x + 2, c])
+    #                         elif x == width - 1 and y == height - 1:  # prawy dolny rog
+    #                             smoothed_pixels[y, x, c] = np.median(self.pixels[y - 1:y + 1, x - 1:x + 1, c])
+    #         if self.pixels.shape < (3, 3, 3):
+    #             print("Nie mozna nalozyc maski jesli wymiar obrazu jest ponizej 3x3")
+    #             return
+    #         # wyciecie wartosci czerwonych z pixeli
+    #         reds = self.pixels[:, :, 0]
+    #         redSquares = np.lib.stride_tricks.sliding_window_view(reds, (3, 3))  # stworzenie macierzy 3x3 z sasiadujacych wartosci
+    #         mediansOfRedSquares = np.median(redSquares, axis=(2, 3))  # wyliczenie mediany z kazdej macierzy
+    #         self.pixels[:, :, 0][1:-1, 1:-1] = mediansOfRedSquares  # przypisanie median do srodowych wartosci w macierzach
+    #         # wyciecie wartosci zielonych z pixeli
+    #         greens = self.pixels[:, :, 1]
+    #         greenSquares = np.lib.stride_tricks.sliding_window_view(greens, (3, 3))  # stworzenie macierzy 3x3 z sasiadujacych wartosci
+    #         mediansOfGreenSquares = np.median(greenSquares, axis=(2, 3))  # wyliczenie mediany z kazdej macierzy
+    #         self.pixels[:, :, 1][1:-1, 1:-1] = mediansOfGreenSquares  # przypisanie median do srodowych wartosci w macierzach
+    #         # wyciecie wartosci niebieskich z pixeli
+    #         blues = self.pixels[:, :, 2]
+    #         blueSquares = np.lib.stride_tricks.sliding_window_view(blues, (3, 3))  # stworzenie macierzy 3x3 z sasiadujacych wartosci
+    #         mediansOfBlueSquares = np.median(blueSquares, axis=(2, 3))  # wyliczenie mediany z kazdej macierzy
+    #         self.pixels[:, :, 2][1:-1, 1:-1] = mediansOfBlueSquares  # przypisanie median do srodowych wartosci w macierzach
+    #         #dodanie krawedzi fo pixeli
+    #         for y in range(0, height):
+    #             for x in range(0, width):
+    #                 if y == 0 or y == height - 1 or x == 0 or x == width - 1:
+    #                     for c in range(3):
+    #                         self.pixels[y, x, c] = smoothed_pixels[y, x, c]
+    #         # ograniczenie pixeli do wartosci od 0 do 255 oraz narysowanie obrazka
+    #         limitedPixels = np.clip(self.pixels, 0, 255).astype(np.uint8)
+    #         self.image = Image.fromarray(np.uint8(limitedPixels))
+    #         self.tk_image = ImageTk.PhotoImage(self.image)
+    #         self.show_image()
+    #     self.measureTime("END")
 
     def sobelFilter(self):
         pass

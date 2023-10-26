@@ -27,21 +27,21 @@ if __name__ == "__main__":
 # print("KWADRATY")
 # if reds.shape >= (3,3):
 #     print("OK")
-#     squares = np.lib.stride_tricks.sliding_window_view(reds, (3, 3))
+#     squares = np.lib.stride_tricks.sliding_window_view(reds, (3, 3), subok=True)
 #     print(squares)
-#     print("Średnie:\n")
-#     averagesOfSquares = np.average(squares, axis=(2, 3))
-#     print(averagesOfSquares)
+#     # print("Średnie:\n")
+#     # averagesOfSquares = np.average(squares, axis=(2, 3))
+#     # print(averagesOfSquares)
 #
 # else:
 #     print("NIE OK")
 #
-# print("Srodki")
-# redSquares = reds[1:-1, 1:-1]
-# print(redSquares)
-# print("Zmiana")
-# reds[1:-1, 1:-1] = averagesOfSquares
-# print(reds)
-# print("Tablica po zmianach:")
-# arr[:, :, 0][1:-1, 1:-1] = averagesOfSquares
-# print(arr)
+# # print("Srodki")
+# # redSquares = reds[1:-1, 1:-1]
+# # print(redSquares)
+# # print("Zmiana")
+# # reds[1:-1, 1:-1] = averagesOfSquares
+# # print(reds)
+# # print("Tablica po zmianach:")
+# # arr[:, :, 0][1:-1, 1:-1] = averagesOfSquares
+# # print(arr)
