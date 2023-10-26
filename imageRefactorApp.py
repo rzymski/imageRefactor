@@ -176,19 +176,47 @@ class ImageRefactorApp:
         else:
             raise Exception(f"Nie ma takiego filtra {self.filterType.get()}")
 
+    # def averageFilter(self):
+    #     self.measureTime("START")
+    #     if self.image:
+    #         kernel = np.array([[1 / 9, 1 / 9, 1 / 9], [1 / 9, 1 / 9, 1 / 9], [1 / 9, 1 / 9, 1 / 9]])
+    #         height, width, _ = self.pixels.shape
+    #         smoothed_pixels = deepcopy(self.pixels)
+    #         for y in range(1, height - 1):
+    #             for x in range(1, width - 1):
+    #                 for c in range(3):  # Loop over R, G, and B channels
+    #                     smoothed_pixels[y, x, c] = np.sum(self.pixels[y - 1:y + 2, x - 1:x + 2, c] * kernel)
+    #                     # print(self.pixels[y - 1:y + 2, x - 1:x + 2, c])
+    #         smoothed_pixels = np.clip(smoothed_pixels, 0, 255).astype(np.uint8)
+    #         self.image = Image.fromarray(smoothed_pixels)
+    #         self.tk_image = ImageTk.PhotoImage(self.image)
+    #         self.show_image()
+    #     self.measureTime("END")
+
     def averageFilter(self):
         self.measureTime("START")
         if self.image:
-            kernel = np.array([[1 / 9, 1 / 9, 1 / 9], [1 / 9, 1 / 9, 1 / 9], [1 / 9, 1 / 9, 1 / 9]])
-            height, width, _ = self.pixels.shape
-            smoothed_pixels = deepcopy(self.pixels)
-            for y in range(1, height - 1):
-                for x in range(1, width - 1):
-                    for c in range(3):  # Loop over R, G, and B channels
-                        smoothed_pixels[y, x, c] = np.sum(self.pixels[y - 1:y + 2, x - 1:x + 2, c] * kernel)
-                        # print(self.pixels[y - 1:y + 2, x - 1:x + 2, c])
-            smoothed_pixels = np.clip(smoothed_pixels, 0, 255).astype(np.uint8)
-            self.image = Image.fromarray(smoothed_pixels)
+            if self.pixels.shape < (3, 3, 3):
+                print("Nie mozna nalozyc maski jesli wymiar obrazu jest ponizej 3x3")
+                return
+            # wyciecie wartosci czerwonych z pixeli
+            reds = self.pixels[:, :, 0]
+            redSquares = np.lib.stride_tricks.sliding_window_view(reds, (3, 3))  # stworzenie macierzy 3x3 z sasiadujacych wartosci
+            averagesOfRedSquares = np.average(redSquares, axis=(2, 3))  # wyliczenie sredniej z kazdej macierzy
+            self.pixels[:, :, 0][1:-1, 1:-1] = averagesOfRedSquares  # przypisanie srednich do srodowych wartosci w macierzach
+            # wyciecie wartosci zielonych z pixeli
+            greens = self.pixels[:, :, 1]
+            greenSquares = np.lib.stride_tricks.sliding_window_view(greens, (3, 3))  # stworzenie macierzy 3x3 z sasiadujacych wartosci
+            averagesOfGreenSquares = np.average(greenSquares, axis=(2, 3))  # wyliczenie sredniej z kazdej macierzy
+            self.pixels[:, :, 1][1:-1, 1:-1] = averagesOfGreenSquares  # przypisanie srednich do srodowych wartosci w macierzach
+            # wyciecie wartosci niebieskich z pixeli
+            blues = self.pixels[:, :, 2]
+            blueSquares = np.lib.stride_tricks.sliding_window_view(blues, (3, 3))  # stworzenie macierzy 3x3 z sasiadujacych wartosci
+            averagesOfBlueSquares = np.average(blueSquares, axis=(2, 3))  # wyliczenie sredniej z kazdej macierzy
+            self.pixels[:, :, 2][1:-1, 1:-1] = averagesOfBlueSquares  # przypisanie srednich do srodowych wartosci w macierzach
+            # ograniczenie pixeli do wartosci od 0 do 255 oraz narysowanie obrazka
+            limitedPixels = np.clip(self.pixels, 0, 255).astype(np.uint8)
+            self.image = Image.fromarray(np.uint8(limitedPixels))
             self.tk_image = ImageTk.PhotoImage(self.image)
             self.show_image()
         self.measureTime("END")
@@ -423,12 +451,13 @@ class ImageRefactorApp:
         self.settingsAfterLoad()
 
     def reloadOriginalJPG(self):
-        self.image = deepcopy(self.originalImage)
-        self.pixels = np.array(self.image, dtype=np.int32)
-        if self.image is None:
-            return
-        self.tk_image = ImageTk.PhotoImage(self.image)
-        self.settingsAfterLoad()
+        if self.originalImage:
+            self.image = deepcopy(self.originalImage)
+            self.pixels = np.array(self.image, dtype=np.int32)
+            if self.image is None:
+                return
+            self.tk_image = ImageTk.PhotoImage(self.image)
+            self.settingsAfterLoad()
 
     def saveJPG(self):
         if self.image:
