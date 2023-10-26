@@ -6,16 +6,6 @@ if __name__ == "__main__":
     root.mainloop()
 
 
-import time
-
-# st = time.time()
-# f = 1.534234234234
-# for i in range(10000000):
-#     f *= i
-#     intF = int(f)
-# end = time.time()
-# timedelta = end - st
-# print(f"Czas: {timedelta}")
 
 # root = tk.Tk()
 # app = ImageRefactorApp(root)

@@ -220,34 +220,25 @@ class ImageRefactorApp:
             output = RGB(input.v, p, q)
         return output
 
-    def changeLightness(self):
-        self.measureTime("START")
-
-        # for r in range(256):
-        #     for g in range(256):
-        #         for b in range(256):
-        #             rgb_color = RGB(r / 255, g / 255, b / 255)
-        #             hsv_color = self.RGB2HSV(rgb_color)
-        #             hsv_color.v *= max(0, min(255, float(self.lightChangeEntry.get())))
-        #             new_rgb_color = self.HSV2RGB(hsv_color)
-
-        height, width, _ = self.pixels.shape
-        for x in range(height):
-            for y in range(width):
-                pixel = self.pixels[x, y]
-                # print(pixel)
-                h, s, v = self.convertRGBtoHSV(pixel[0], pixel[1], pixel[2])
-                v *= max(0, min(255, float(self.lightChangeEntry.get())))
-                r, g, b = self.convertHSVtoRGB(h, s, v)
-                # self.image.putpixel((y, x), (r, g, b))
-                self.pixels[x, y] = (r, g, b)
-        limitedPixels = np.clip(self.pixels, 0, 255).astype(np.uint8)
-        self.image = Image.fromarray(np.uint8(limitedPixels))
-        self.tk_image = ImageTk.PhotoImage(self.image)
-        self.show_image()
-
-        self.measureTime("END")
-        print("SKONCZYL")
+    # def changeLightness(self):
+    #     self.measureTime("START")
+    #     height, width, _ = self.pixels.shape
+    #     for x in range(height):
+    #         for y in range(width):
+    #             pixel = self.pixels[x, y]
+    #             # print(pixel)
+    #             h, s, v = self.convertRGBtoHSV(pixel[0], pixel[1], pixel[2])
+    #             v *= max(0, min(255, float(self.lightChangeEntry.get())))
+    #             r, g, b = self.convertHSVtoRGB(h, s, v)
+    #             # self.image.putpixel((y, x), (r, g, b))
+    #             self.pixels[x, y] = (r, g, b)
+    #     limitedPixels = np.clip(self.pixels, 0, 255).astype(np.uint8)
+    #     self.image = Image.fromarray(np.uint8(limitedPixels))
+    #     self.tk_image = ImageTk.PhotoImage(self.image)
+    #     self.show_image()
+    #
+    #     self.measureTime("END")
+    #     print("SKONCZYL")
 
     def convertRGBtoHSV(self, r, g, b):
         r, g, b = r / 255.0, g / 255.0, b / 255.0
@@ -291,8 +282,37 @@ class ImageRefactorApp:
             r, g, b = c, 0, x
         else:
             raise Exception("H poza zakresem")
-        r, g, b = int((r+m)*255), int((g+m)*255), int((b+m)*255)
+        r, g, b = round((r+m)*255), round((g+m)*255), round((b+m)*255)
         return r, g, b
+
+    def changeLightness(self):
+        self.measureTime("START")
+        if self.image:
+            reds = self.pixels[:, :, 0]
+            greens = self.pixels[:, :, 1]
+            blues = self.pixels[:, :, 2]
+            h, s, v = np.vectorize(self.convertRGBtoHSV)(reds, greens, blues)
+            v *= max(0, min(255, float(self.lightChangeEntry.get())))
+            r, g, b = np.vectorize(self.convertHSVtoRGB)(h, s, v)
+            self.pixels[:, :, 0] = r
+            self.pixels[:, :, 1] = g
+            self.pixels[:, :, 2] = b
+            # height, width, _ = self.pixels.shape
+            # for x in range(height):
+            #     for y in range(width):
+            #         pixel = self.pixels[x, y]
+            #         # print(pixel)
+            #         h, s, v = self.convertRGBtoHSV(pixel[0], pixel[1], pixel[2])
+            #         v *= max(0, min(255, float(self.lightChangeEntry.get())))
+            #         r, g, b = self.convertHSVtoRGB(h, s, v)
+            #         # self.image.putpixel((y, x), (r, g, b))
+            #         self.pixels[x, y] = (r, g, b)
+            limitedPixels = np.clip(self.pixels, 0, 255).astype(np.uint8)
+            self.image = Image.fromarray(np.uint8(limitedPixels))
+            self.tk_image = ImageTk.PhotoImage(self.image)
+            self.show_image()
+            self.measureTime("END")
+        print("SKONCZYL")
 
     def greyConversion(self, adjusted=False):
         self.measureTime("START")
