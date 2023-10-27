@@ -408,22 +408,27 @@ class ImageRefactorApp:
             self.limitPixelsAndShowImage(self.pixels, True)
         self.measureTime("END")
 
-    def highPassSharpeningFilter(self):
+    def highPassSharpeningFilter(self, dim=3):
         self.measureTime("START")
         if self.image:
-            # highPassMask = np.array([[-1, -1, -1], [-1, 9, -1], [-1, -1, -1]])
-            highPassMask = np.array([[-1, -1, -1, -1, -1], [-1, 1, 2, 1, -1], [-1, 2, 5, 2, -1], [-1, 1, 2, 1, -1], [-1, -1, -1, -1, -1]])
             height, width, _ = self.pixels.shape
-            sobelPixels = deepcopy(self.pixels)
-            # for y in range(1, height-1):
-            #     for x in range(1, width-1):
-            #         for c in range(3):  # Loop over R, G, and B channels
-            #                 sobelPixels[y, x, c] = np.sum(self.pixels[y - 1:y + 2, x - 1:x + 2, c] * highPassMask)
-            for y in range(2, height-2):
-                for x in range(2, width-2):
-                    for c in range(3):  # Loop over R, G, and B channels
-                            sobelPixels[y, x, c] = np.sum(self.pixels[y - 2:y + 3, x - 2:x + 3, c] * highPassMask)
-            self.limitPixelsAndShowImage(sobelPixels, True)
+            highPassPixels = deepcopy(self.pixels)
+            if dim == 3:
+                highPassMask = np.array([[0, -1, 0], [-1, 5, -1], [0, -1, 0]])
+                # highPassMask = np.array([[-1, -1, -1], [-1, 9, -1], [-1, -1, -1]])
+                for y in range(1, height-1):
+                    for x in range(1, width-1):
+                        for c in range(3):  # Loop over R, G, and B channels
+                                highPassPixels[y, x, c] = np.sum(self.pixels[y - 1:y + 2, x - 1:x + 2, c] * highPassMask)
+            elif dim == 5:
+                highPassMask = np.array([[-1, -1, -1, -1, -1], [-1, 1, 2, 1, -1], [-1, 2, 5, 2, -1], [-1, 1, 2, 1, -1], [-1, -1, -1, -1, -1]])
+                for y in range(2, height-2):
+                    for x in range(2, width-2):
+                        for c in range(3):  # Loop over R, G, and B channels
+                                highPassPixels[y, x, c] = np.sum(self.pixels[y - 2:y + 3, x - 2:x + 3, c] * highPassMask)
+            else:
+                raise Exception("Nie ma takiej opcji")
+            self.limitPixelsAndShowImage(highPassPixels, True)
         self.measureTime("END")
 
     def highPassSharpeningFilterOptimized(self, dim=3):
@@ -434,14 +439,14 @@ class ImageRefactorApp:
                 return
             if dim == 3:
                 highPassMask = np.array([[0, -1, 0], [-1, 5, -1], [0, -1, 0]])
-                # highPassMask = np.array([[-1, -1, -1], [-1, 9, -1], [-1, -1, -1]])
+                #highPassMask = np.array([[-1, -1, -1], [-1, 9, -1], [-1, -1, -1]])
             elif dim == 5:
                 highPassMask = np.array([[-1, -1, -1, -1, -1], [-1, 1, 2, 1, -1], [-1, 2, 5, 2, -1], [-1, 1, 2, 1, -1], [-1, -1, -1, -1, -1]])
             else:
                 raise Exception("Nie ma takiej opcji")
             # wyciecie wartosci czerwonych, zielonych i niebieskich pixeli osobno
             reds, greens, blues = self.pixels[:, :, 0], self.pixels[:, :, 1], self.pixels[:, :, 2]
-            # stworzenie macierz 3x3 z sasiadujacych wartosci dla kazdej grupy
+            # stworzenie macierz dim x dim z sasiadujacych wartosci dla kazdej grupy
             redSquares, greenSquares, blueSquares = np.lib.stride_tricks.sliding_window_view(reds, (dim, dim)), np.lib.stride_tricks.sliding_window_view(greens, (dim, dim)), np.lib.stride_tricks.sliding_window_view(blues, (dim, dim))
             # wyliczenie highpass z kazdej macierzy
             highpassesOfRedSquares, highpassesOfGreenSquares, highpassesOfBlueSquares = np.sum(redSquares * highPassMask, axis=(2, 3)), np.sum(greenSquares * highPassMask, axis=(2, 3)), np.sum(blueSquares * highPassMask, axis=(2, 3))
@@ -452,38 +457,81 @@ class ImageRefactorApp:
             self.limitPixelsAndShowImage(self.pixels, True)
         self.measureTime("END")
 
-    # def highPassSharpeningFilterOptimized(self, dim=3):
-    #     self.measureTime("START")
-    #     if self.image:
-    #         if self.pixels.shape < (dim, dim, 3):
-    #             print("Nie mozna nalozyc maski jesli wymiar obrazu jest ponizej 3x3")
-    #             return
-    #         if dim == 3:
-    #             highPassMask = np.array([[0, -1, 0], [-1, 5, -1], [0, -1, 0]])
-    #             # highPassMask = np.array([[-1, -1, -1], [-1, 9, -1], [-1, -1, -1]])
-    #         elif dim == 5:
-    #             highPassMask = np.array([[-1, -1, -1, -1, -1], [-1, 1, 2, 1, -1], [-1, 2, 5, 2, -1], [-1, 1, 2, 1, -1], [-1, -1, -1, -1, -1]])
-    #         else:
-    #             raise Exception("Nie ma takiej opcji")
-    #         start = int(dim / 2)
-    #         end = -1 * start
-    #         # wyciecie wartosci czerwonych, zielonych i niebieskich pixeli osobno
-    #         reds, greens, blues = self.pixels[:, :, 0], self.pixels[:, :, 1], self.pixels[:, :, 2]
-    #         # stworzenie macierz 3x3 z sasiadujacych wartosci dla kazdej grupy
-    #         redSquares, greenSquares, blueSquares = np.lib.stride_tricks.sliding_window_view(reds, (dim, dim)), np.lib.stride_tricks.sliding_window_view(greens, (dim, dim)), np.lib.stride_tricks.sliding_window_view(blues, (dim, dim))
-    #         # wyliczenie highpass z kazdej macierzy
-    #         factor = 0.5
-    #         highpassesOfRedSquares, highpassesOfGreenSquares, highpassesOfBlueSquares = redSquares[:, :, 1, 1]+factor*(np.median(redSquares, axis=(2, 3)) - redSquares[:, :, 1, 1]), greenSquares[:, :, 1, 1]+factor*(np.median(greenSquares, axis=(2, 3)) - greenSquares[:, :, 1, 1]), blueSquares[:, :, 1, 1]+factor*(np.median(blueSquares, axis=(2, 3)) - blueSquares[:, :, 1, 1])
-    #         # przypisanie median do srodowych wartosci w macierzach
-    #         self.pixels[:, :, 0][start:end, start:end], self.pixels[:, :, 1][start:end, start:end], self.pixels[:, :, 2][start:end, start:end] = highpassesOfRedSquares, highpassesOfGreenSquares, highpassesOfBlueSquares
-    #         self.limitPixelsAndShowImage(self.pixels, True)
-    #     self.measureTime("END")
+    def gaussianBlurFilter(self, dim=3, simplified=True):
+        self.measureTime("START")
+        if self.image:
+            height, width, _ = self.pixels.shape
+            gaussianBlurPixels = deepcopy(self.pixels)
+            if simplified:
+                gaussianBlurMask = np.array([[1, 2, 1], [2, 4, 2], [1, 2, 1]])
+                for y in range(1, height - 1):
+                    for x in range(1, width - 1):
+                        for c in range(3):  # Loop over R, G, and B channels
+                            gaussianBlurPixels[y, x, c] = np.sum(self.pixels[y - 1:y + 2, x - 1:x + 2, c] * gaussianBlurMask / 16)
+            # DZIWNIE SIE ZACHOWUJE, przesuwa obraz jakby w lewy gorny rog
+            # else:
+            #     if dim % 2 == 0:
+            #         raise Exception("Size of kernel should be odd")
+            #     gaussianBlurMask = np.zeros((dim, dim))
+            #     halfDim = int(dim / 2)
+            #     sigma = 1.0 #0.84089642
+            #     sumGaussElements = 0
+            #     for x in range(-1*halfDim, halfDim+1):
+            #         for y in range(-1*halfDim, halfDim+1):
+            #             # gaussianBlurMask[x, y] = np.exp(-0.5 * np.power((x-mean)/sigma, 2) + np.power((y-mean)/sigma, 2)) / (2 * np.pi * sigma * sigma)
+            #             gaussianBlurMask[x+halfDim, y+halfDim] = np.exp((np.power(x-halfDim, 2.0) + np.power(y-halfDim, 2.0)) / (-2 * (sigma * sigma))) / (2 * np.pi * sigma * sigma)
+            #             #print(f"X={x+halfDim} Y={y+halfDim} eX={eX} G={gaussianBlurMask[x+halfDim, y+halfDim]}")
+            #             sumGaussElements += gaussianBlurMask[x+halfDim, y+halfDim]
+            #     #print(f"SUMA = {sumGaussElements}")
+            #     #normalizacja
+            #     for x in range(dim):
+            #         for y in range(dim):
+            #             gaussianBlurMask[x, y] = gaussianBlurMask[x, y] / sumGaussElements
+            #     print(gaussianBlurMask)
+            #     for y in range(halfDim, height - halfDim):
+            #         for x in range(halfDim, width - halfDim):
+            #             for c in range(3):  # Loop over R, G, and B channels
+            #                 gaussianBlurPixels[y, x, c] = np.sum(self.pixels[y - halfDim:y + halfDim+1, x - halfDim:x + halfDim+1, c] * gaussianBlurMask)
+            self.limitPixelsAndShowImage(gaussianBlurPixels, True)
+        self.measureTime("END")
 
-    def gaussianBlurFilter(self):
-        pass
-
-    def gaussianBlurFilterOptimized(self):
-        pass
+    def gaussianBlurFilterOptimized(self, dim=3, simplified=True):
+        self.measureTime("START")
+        if self.image:
+            if simplified:
+                gaussianBlurMask = np.array([[1, 2, 1], [2, 4, 2], [1, 2, 1]])
+                reds, greens, blues = self.pixels[:, :, 0], self.pixels[:, :, 1], self.pixels[:, :, 2]
+                redSquares, greenSquares, blueSquares = np.lib.stride_tricks.sliding_window_view(reds, (dim, dim)), np.lib.stride_tricks.sliding_window_view(greens, (dim, dim)), np.lib.stride_tricks.sliding_window_view(blues, (dim, dim))
+                gaussianBlurOfRedSquares, gaussianBlurOfGreenSquares, gaussianBlurOfBlueSquares = np.sum(redSquares * gaussianBlurMask / 16, axis=(2, 3)), np.sum(greenSquares * gaussianBlurMask / 16, axis=(2, 3)), np.sum(blueSquares * gaussianBlurMask / 16, axis=(2, 3))
+                start = int(dim / 2)
+                end = -1 * start
+                self.pixels[:, :, 0][start:end, start:end], self.pixels[:, :, 1][start:end, start:end], self.pixels[:, :, 2][start:end, start:end] = gaussianBlurOfRedSquares, gaussianBlurOfGreenSquares, gaussianBlurOfBlueSquares
+                print("OK")
+            # DZIWNIE SIE ZACHOWUJE, przesuwa obraz jakby w lewy gorny rog
+            # else:
+            #     if dim % 2 == 0:
+            #         raise Exception("Size of kernel should be odd")
+            #     # gaussian function
+            #     gaussianBlurMask = np.zeros((dim, dim))
+            #     halfDim = int(dim / 2)
+            #     minusHalfDim = -1 * halfDim
+            #     sigma = 0.84089642
+            #     sumGaussElements = 0
+            #     for x in range(-1 * halfDim, halfDim + 1):
+            #         for y in range(-1 * halfDim, halfDim + 1):
+            #             gaussianBlurMask[x + halfDim, y + halfDim] = np.exp((np.power(x - halfDim, 2.0) + np.power(y - halfDim, 2.0)) / (-2 * (sigma * sigma))) / (2 * np.pi * sigma * sigma)
+            #             sumGaussElements += gaussianBlurMask[x + halfDim, y + halfDim]
+            #     # normalization
+            #     for x in range(dim):
+            #         for y in range(dim):
+            #             gaussianBlurMask[x, y] = gaussianBlurMask[x, y] / sumGaussElements
+            #     #
+            #     reds, greens, blues = self.pixels[:, :, 0], self.pixels[:, :, 1], self.pixels[:, :, 2]
+            #     redSquares, greenSquares, blueSquares = np.lib.stride_tricks.sliding_window_view(reds, (dim, dim)), np.lib.stride_tricks.sliding_window_view(greens, (dim, dim)), np.lib.stride_tricks.sliding_window_view(blues, (dim, dim))
+            #     gaussianBlurOfRedSquares, gaussianBlurOfGreenSquares, gaussianBlurOfBlueSquares = np.sum(redSquares * gaussianBlurMask, axis=(2, 3)), np.sum(greenSquares * gaussianBlurMask, axis=(2, 3)), np.sum(blueSquares * gaussianBlurMask, axis=(2, 3))
+            #     self.pixels[:, :, 0][halfDim:minusHalfDim, halfDim:minusHalfDim], self.pixels[:, :, 1][halfDim:minusHalfDim, halfDim:minusHalfDim], self.pixels[:, :, 2][halfDim:minusHalfDim, halfDim:minusHalfDim] = gaussianBlurOfRedSquares, gaussianBlurOfGreenSquares, gaussianBlurOfBlueSquares
+            self.limitPixelsAndShowImage(self.pixels, True)
+        self.measureTime("END")
 
     def doPointTransformation(self):
         if self.operationType.get() != 'lightness':
