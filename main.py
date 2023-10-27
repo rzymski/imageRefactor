@@ -8,20 +8,20 @@ if __name__ == "__main__":
 
 # import numpy as np
 #
-# a1 = [1, 2, 3]
-# a2 = [4, 5, 6]
-# a3 = np.add(a1, a2)
-# print(a3)
+# # a1 = [1, 2, 3]
+# # a2 = [4, 5, 6]
+# # a3 = np.add(a1, a2)
+# # print(a3)
 #
 #
 # # arr = np.arange(0, 48, 1, dtype=int)
 # # for i in np.nditer(arr):
 # #     arr[i] += i*i/2
-# arr = np.random.randint(10, size=(1, 48))
+# arr = np.random.randint(10, size=(1, 147))
 #
-# print(f"Shape = {arr.shape} Arr:\n{arr}")
-# arr = arr.reshape((4, 4, 3))
-# print(f"Shape = {arr.shape} Arr:\n{arr}")
+# # print(f"Shape = {arr.shape} Arr:\n{arr}")
+# arr = arr.reshape((7, 7, 3))
+# # print(f"Shape = {arr.shape} Arr:\n{arr}")
 # reds = arr[:, :, 0]
 # print(f"Reds:\n{reds}\n")
 #
@@ -30,9 +30,9 @@ if __name__ == "__main__":
 #
 # # redSquaresChanged = np.average()
 # print("KWADRATY")
-# if reds.shape >= (3,3):
+# if reds.shape >= (3, 3):
 #     print("OK")
-#     squares = np.lib.stride_tricks.sliding_window_view(reds, (3, 3), subok=True)
+#     squares = np.lib.stride_tricks.sliding_window_view(reds, (5, 5), subok=True)
 #     print(squares)
 #     # print("Średnie:\n")
 #     # averagesOfSquares = np.average(squares, axis=(2, 3))

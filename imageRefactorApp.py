@@ -195,9 +195,9 @@ class ImageRefactorApp:
         elif self.filterType.get() == '2':
             self.sobelFilter(self.sobelOption.get()) if self.switchState.get() == "off" else self.sobelFilterOptimized(self.sobelOption.get())
         elif self.filterType.get() == '3':
-            self.highPassSharpeningFilter()
+            self.highPassSharpeningFilter() if self.switchState.get() == "off" else self.highPassSharpeningFilterOptimized()
         elif self.filterType.get() == '4':
-            self.gaussianBlurFilter()
+            self.gaussianBlurFilter() if self.switchState.get() == "off" else self.gaussianBlurFilterOptimized()
         else:
             raise Exception(f"Nie ma takiego filtra {self.filterType.get()}")
 
@@ -366,21 +366,17 @@ class ImageRefactorApp:
             sobelY = np.array([[1, 2, 1], [0, 0, 0], [-1, -2, -1]])
             height, width, _ = self.pixels.shape
             sobelPixels = deepcopy(self.pixels)
-            for y in range(0, height):
-                for x in range(0, width):
+            for y in range(1, height-1):
+                for x in range(1, width-1):
                     for c in range(3):  # Loop over R, G, and B channels
-                        if 0 < y < height - 1 and 0 < x < width - 1:  # srodek
-                            # sobelPixels[y, x, c] = np.sum(self.pixels[y - 1:y + 2, x - 1:x + 2, c] * sobelX)
-                            # sobelPixels[y, x, c] = np.sum(self.pixels[y - 1:y + 2, x - 1:x + 2, c] * sobelY)
-                            if sobelVariant == "0":
-                                sobelPixels[y, x, c] = np.sqrt(np.add(np.power(np.sum(self.pixels[y - 1:y + 2, x - 1:x + 2, c] * sobelX), 2), np.power(np.sum(self.pixels[y - 1:y + 2, x - 1:x + 2, c] * sobelY), 2)))
-                            elif sobelVariant == "1":
-                                sobelPixels[y, x, c] = np.sum(self.pixels[y - 1:y + 2, x - 1:x + 2, c] * sobelY)
-                            elif sobelVariant == "2":
-                                sobelPixels[y, x, c] = np.sum(self.pixels[y - 1:y + 2, x - 1:x + 2, c] * sobelX)
-                            else:
-                                raise Exception("Nie ma takiej opcji Sobela")
-                            # print(smoothed_pixels[y - 1:y + 2, x - 1:x + 2, c])
+                        if sobelVariant == "0":
+                            sobelPixels[y, x, c] = np.sqrt(np.add(np.power(np.sum(self.pixels[y - 1:y + 2, x - 1:x + 2, c] * sobelX), 2), np.power(np.sum(self.pixels[y - 1:y + 2, x - 1:x + 2, c] * sobelY), 2)))
+                        elif sobelVariant == "1":
+                            sobelPixels[y, x, c] = np.sum(self.pixels[y - 1:y + 2, x - 1:x + 2, c] * sobelY)
+                        elif sobelVariant == "2":
+                            sobelPixels[y, x, c] = np.sum(self.pixels[y - 1:y + 2, x - 1:x + 2, c] * sobelX)
+                        else:
+                            raise Exception("Nie ma takiej opcji Sobela")
             self.limitPixelsAndShowImage(sobelPixels, True)
         self.measureTime("END")
 
@@ -413,9 +409,80 @@ class ImageRefactorApp:
         self.measureTime("END")
 
     def highPassSharpeningFilter(self):
-        pass
+        self.measureTime("START")
+        if self.image:
+            # highPassMask = np.array([[-1, -1, -1], [-1, 9, -1], [-1, -1, -1]])
+            highPassMask = np.array([[-1, -1, -1, -1, -1], [-1, 1, 2, 1, -1], [-1, 2, 5, 2, -1], [-1, 1, 2, 1, -1], [-1, -1, -1, -1, -1]])
+            height, width, _ = self.pixels.shape
+            sobelPixels = deepcopy(self.pixels)
+            # for y in range(1, height-1):
+            #     for x in range(1, width-1):
+            #         for c in range(3):  # Loop over R, G, and B channels
+            #                 sobelPixels[y, x, c] = np.sum(self.pixels[y - 1:y + 2, x - 1:x + 2, c] * highPassMask)
+            for y in range(2, height-2):
+                for x in range(2, width-2):
+                    for c in range(3):  # Loop over R, G, and B channels
+                            sobelPixels[y, x, c] = np.sum(self.pixels[y - 2:y + 3, x - 2:x + 3, c] * highPassMask)
+            self.limitPixelsAndShowImage(sobelPixels, True)
+        self.measureTime("END")
+
+    def highPassSharpeningFilterOptimized(self, dim=3):
+        self.measureTime("START")
+        if self.image:
+            if self.pixels.shape < (dim, dim, 3):
+                print("Nie mozna nalozyc maski jesli wymiar obrazu jest ponizej 3x3")
+                return
+            if dim == 3:
+                highPassMask = np.array([[0, -1, 0], [-1, 5, -1], [0, -1, 0]])
+                # highPassMask = np.array([[-1, -1, -1], [-1, 9, -1], [-1, -1, -1]])
+            elif dim == 5:
+                highPassMask = np.array([[-1, -1, -1, -1, -1], [-1, 1, 2, 1, -1], [-1, 2, 5, 2, -1], [-1, 1, 2, 1, -1], [-1, -1, -1, -1, -1]])
+            else:
+                raise Exception("Nie ma takiej opcji")
+            # wyciecie wartosci czerwonych, zielonych i niebieskich pixeli osobno
+            reds, greens, blues = self.pixels[:, :, 0], self.pixels[:, :, 1], self.pixels[:, :, 2]
+            # stworzenie macierz 3x3 z sasiadujacych wartosci dla kazdej grupy
+            redSquares, greenSquares, blueSquares = np.lib.stride_tricks.sliding_window_view(reds, (dim, dim)), np.lib.stride_tricks.sliding_window_view(greens, (dim, dim)), np.lib.stride_tricks.sliding_window_view(blues, (dim, dim))
+            # wyliczenie highpass z kazdej macierzy
+            highpassesOfRedSquares, highpassesOfGreenSquares, highpassesOfBlueSquares = np.sum(redSquares * highPassMask, axis=(2, 3)), np.sum(greenSquares * highPassMask, axis=(2, 3)), np.sum(blueSquares * highPassMask, axis=(2, 3))
+            # przypisanie median do srodowych wartosci w macierzach
+            start = int(dim/2)
+            end = -1 * start
+            self.pixels[:, :, 0][start:end, start:end], self.pixels[:, :, 1][start:end, start:end], self.pixels[:, :, 2][start:end, start:end] = highpassesOfRedSquares, highpassesOfGreenSquares, highpassesOfBlueSquares
+            self.limitPixelsAndShowImage(self.pixels, True)
+        self.measureTime("END")
+
+    # def highPassSharpeningFilterOptimized(self, dim=3):
+    #     self.measureTime("START")
+    #     if self.image:
+    #         if self.pixels.shape < (dim, dim, 3):
+    #             print("Nie mozna nalozyc maski jesli wymiar obrazu jest ponizej 3x3")
+    #             return
+    #         if dim == 3:
+    #             highPassMask = np.array([[0, -1, 0], [-1, 5, -1], [0, -1, 0]])
+    #             # highPassMask = np.array([[-1, -1, -1], [-1, 9, -1], [-1, -1, -1]])
+    #         elif dim == 5:
+    #             highPassMask = np.array([[-1, -1, -1, -1, -1], [-1, 1, 2, 1, -1], [-1, 2, 5, 2, -1], [-1, 1, 2, 1, -1], [-1, -1, -1, -1, -1]])
+    #         else:
+    #             raise Exception("Nie ma takiej opcji")
+    #         start = int(dim / 2)
+    #         end = -1 * start
+    #         # wyciecie wartosci czerwonych, zielonych i niebieskich pixeli osobno
+    #         reds, greens, blues = self.pixels[:, :, 0], self.pixels[:, :, 1], self.pixels[:, :, 2]
+    #         # stworzenie macierz 3x3 z sasiadujacych wartosci dla kazdej grupy
+    #         redSquares, greenSquares, blueSquares = np.lib.stride_tricks.sliding_window_view(reds, (dim, dim)), np.lib.stride_tricks.sliding_window_view(greens, (dim, dim)), np.lib.stride_tricks.sliding_window_view(blues, (dim, dim))
+    #         # wyliczenie highpass z kazdej macierzy
+    #         factor = 0.5
+    #         highpassesOfRedSquares, highpassesOfGreenSquares, highpassesOfBlueSquares = redSquares[:, :, 1, 1]+factor*(np.median(redSquares, axis=(2, 3)) - redSquares[:, :, 1, 1]), greenSquares[:, :, 1, 1]+factor*(np.median(greenSquares, axis=(2, 3)) - greenSquares[:, :, 1, 1]), blueSquares[:, :, 1, 1]+factor*(np.median(blueSquares, axis=(2, 3)) - blueSquares[:, :, 1, 1])
+    #         # przypisanie median do srodowych wartosci w macierzach
+    #         self.pixels[:, :, 0][start:end, start:end], self.pixels[:, :, 1][start:end, start:end], self.pixels[:, :, 2][start:end, start:end] = highpassesOfRedSquares, highpassesOfGreenSquares, highpassesOfBlueSquares
+    #         self.limitPixelsAndShowImage(self.pixels, True)
+    #     self.measureTime("END")
 
     def gaussianBlurFilter(self):
+        pass
+
+    def gaussianBlurFilterOptimized(self):
         pass
 
     def doPointTransformation(self):
