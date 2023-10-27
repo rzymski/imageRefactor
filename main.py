@@ -8,6 +8,11 @@ if __name__ == "__main__":
 
 # import numpy as np
 #
+# a1 = [1, 2, 3]
+# a2 = [4, 5, 6]
+# a3 = np.add(a1, a2)
+# print(a3)
+#
 #
 # # arr = np.arange(0, 48, 1, dtype=int)
 # # for i in np.nditer(arr):

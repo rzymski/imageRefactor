@@ -65,19 +65,19 @@ class ImageRefactorApp:
         # RadioButtons for operations
         self.operationType = StringVar(value="+")
         # self.operationType.set("+")
-        self.radioAddition = Radiobutton(self.pointOperationsLabel, text="Addition", value="+", variable=self.operationType, command=self.onRadioButtonSelect)
+        self.radioAddition = Radiobutton(self.pointOperationsLabel, text="Addition", value="+", variable=self.operationType, command=self.onOperationSelect)
         self.radioAddition.grid(row=0, column=0, sticky="W", columnspan=2)
-        self.radioSubtraction = Radiobutton(self.pointOperationsLabel, text="Subtraction", value="-", variable=self.operationType, command=self.onRadioButtonSelect)
+        self.radioSubtraction = Radiobutton(self.pointOperationsLabel, text="Subtraction", value="-", variable=self.operationType, command=self.onOperationSelect)
         self.radioSubtraction.grid(row=1, column=0, sticky="W", columnspan=2)
-        self.radioMultiplication = Radiobutton(self.pointOperationsLabel, text="Multiplication", value="*", variable=self.operationType, command=self.onRadioButtonSelect)
+        self.radioMultiplication = Radiobutton(self.pointOperationsLabel, text="Multiplication", value="*", variable=self.operationType, command=self.onOperationSelect)
         self.radioMultiplication.grid(row=2, column=0, sticky="W", columnspan=2)
-        self.radioDivision = Radiobutton(self.pointOperationsLabel, text="Division", value="/", variable=self.operationType, command=self.onRadioButtonSelect)
+        self.radioDivision = Radiobutton(self.pointOperationsLabel, text="Division", value="/", variable=self.operationType, command=self.onOperationSelect)
         self.radioDivision.grid(row=3, column=0, sticky="W", columnspan=2)
-        self.radioBrightness = Radiobutton(self.pointOperationsLabel, text="Lightness change", value="lightness", variable=self.operationType, command=self.onRadioButtonSelect)
+        self.radioBrightness = Radiobutton(self.pointOperationsLabel, text="Lightness change", value="lightness", variable=self.operationType, command=self.onOperationSelect)
         self.radioBrightness.grid(row=4, column=0, sticky="W", columnspan=2)
-        self.radioGrayScale1 = Radiobutton(self.pointOperationsLabel, text="Gray Scale averaged", value="grayAverage", variable=self.operationType, command=self.onRadioButtonSelect)
+        self.radioGrayScale1 = Radiobutton(self.pointOperationsLabel, text="Gray Scale averaged", value="grayAverage", variable=self.operationType, command=self.onOperationSelect)
         self.radioGrayScale1.grid(row=5, column=0, sticky="W", columnspan=2)
-        self.radioGrayScale2 = Radiobutton(self.pointOperationsLabel, text="Gray Scale adjusted", value="grayAdjust", variable=self.operationType, command=self.onRadioButtonSelect)
+        self.radioGrayScale2 = Radiobutton(self.pointOperationsLabel, text="Gray Scale adjusted", value="grayAdjust", variable=self.operationType, command=self.onOperationSelect)
         self.radioGrayScale2.grid(row=6, column=0, sticky="W", columnspan=2)
         self.operationSubmitButton = Button(self.pointOperationsLabel, text="Perform point transformation", command=self.doPointTransformation)
         self.operationSubmitButton.grid(row=8, column=0, sticky="WE", columnspan=2)
@@ -108,18 +108,29 @@ class ImageRefactorApp:
         self.switchState = StringVar(value="on")
         self.optimizationSwitch = ctk.CTkSwitch(self.filterLabel, text="Optimization", variable=self.switchState, onvalue="on", offvalue="off", button_color="black")  # progress_color="blue"
         self.optimizationSwitch.grid(row=0, column=0, sticky="WE")
-        self.filterAverage = Radiobutton(self.filterLabel, text="Average filter", value="0", variable=self.filterType)
+        self.filterAverage = Radiobutton(self.filterLabel, text="Average filter", value="0", variable=self.filterType, command=self.onFilterSelect)
         self.filterAverage.grid(row=1, column=0, sticky="W")
-        self.filterMedian = Radiobutton(self.filterLabel, text="Median filter", value="1", variable=self.filterType)
+        self.filterMedian = Radiobutton(self.filterLabel, text="Median filter", value="1", variable=self.filterType, command=self.onFilterSelect)
         self.filterMedian.grid(row=2, column=0, sticky="W")
-        self.filterSobel = Radiobutton(self.filterLabel, text="Sobel filter", value="2", variable=self.filterType)
+        self.filterSobel = Radiobutton(self.filterLabel, text="Sobel filter", value="2", variable=self.filterType, command=self.onFilterSelect)
         self.filterSobel.grid(row=3, column=0, sticky="W")
-        self.filterHighPassSharpening = Radiobutton(self.filterLabel, text="High pass sharpening filter", value="3", variable=self.filterType)
-        self.filterHighPassSharpening.grid(row=4, column=0, sticky="W")
-        self.filterGaussianBlur = Radiobutton(self.filterLabel, text="Gaussian Blur filter", value="4", variable=self.filterType)
-        self.filterGaussianBlur.grid(row=5, column=0, sticky="W")
+        # label for sobel filter options
+        self.sobelOptionsLabel = LabelFrame(self.filterLabel, text="Sobel options", padx=10, pady=10, labelanchor="nw")
+        # Options filter Sobel both, horizontal or vertical
+        self.sobelOption = StringVar(value="0")
+        self.sobelBoth = Radiobutton(self.sobelOptionsLabel, text="Both horizontal and vertical", value="0", variable=self.sobelOption)
+        self.sobelBoth.grid(row=0, column=0, sticky="W")
+        self.sobelHorizontal = Radiobutton(self.sobelOptionsLabel, text="Horizontal", value="1", variable=self.sobelOption)
+        self.sobelHorizontal.grid(row=1, column=0, sticky="W")
+        self.sobelVertical = Radiobutton(self.sobelOptionsLabel, text="Vertical", value="2", variable=self.sobelOption)
+        self.sobelVertical.grid(row=2, column=0, sticky="W")
+        # RadioButtons for filters
+        self.filterHighPassSharpening = Radiobutton(self.filterLabel, text="High pass sharpening filter", value="3", variable=self.filterType, command=self.onFilterSelect)
+        self.filterHighPassSharpening.grid(row=5, column=0, sticky="W")
+        self.filterGaussianBlur = Radiobutton(self.filterLabel, text="Gaussian Blur filter", value="4", variable=self.filterType, command=self.onFilterSelect)
+        self.filterGaussianBlur.grid(row=6, column=0, sticky="W")
         self.filterSubmitButton = Button(self.filterLabel, text="Apply filter", command=self.applyFilter)
-        self.filterSubmitButton.grid(row=6, column=0, sticky="WE")
+        self.filterSubmitButton.grid(row=7, column=0, sticky="WE")
 
         self.imageSpace = Canvas(self.root, bg="white")
         self.imageSpace.pack(fill="both", expand=True)
@@ -130,6 +141,8 @@ class ImageRefactorApp:
         self.originalImage = None
         self.pixels = None
 
+        self.hsvPixels = None
+
     def validateEntryRGB(self, P):
         pattern = r'^-?\d*(\.\d*)?$'
         if re.match(pattern, P) is not None:
@@ -137,8 +150,14 @@ class ImageRefactorApp:
         else:
             return False
 
-    def onRadioButtonSelect(self):
+    def onOperationSelect(self):
         self.updateParameterLabels(self.operationType.get())
+
+    def onFilterSelect(self):
+        if self.filterType.get() == "2":
+            self.sobelOptionsLabel.grid(row=4, column=0, sticky="WE")
+        else:
+            self.sobelOptionsLabel.grid_forget()
 
     def updateParameterLabels(self, value):
         self.redChangeLabel.grid_forget()
@@ -167,13 +186,14 @@ class ImageRefactorApp:
             raise Exception("Nie ma takiej opcji")
 
     def applyFilter(self):
+        self.hsvPixels = None
         print(f"Zastosowano filtr: {self.filterType.get()} optymalizacja jest {self.switchState.get()}")
         if self.filterType.get() == '0':
             self.averageFilter() if self.switchState.get() == "off" else self.averageFilterOptimized()
         elif self.filterType.get() == '1':
             self.medianFilter() if self.switchState.get() == "off" else self.medianFilterOptimized()
         elif self.filterType.get() == '2':
-            self.sobelFilter()
+            self.sobelFilter(self.sobelOption.get()) if self.switchState.get() == "off" else self.sobelFilterOptimized(self.sobelOption.get())
         elif self.filterType.get() == '3':
             self.highPassSharpeningFilter()
         elif self.filterType.get() == '4':
@@ -213,11 +233,6 @@ class ImageRefactorApp:
                         else:
                             print("Jest tylko jeden pixel")
             self.limitPixelsAndShowImage(smoothed_pixels, True)
-            # smoothed_pixels = np.clip(smoothed_pixels, 0, 255).astype(np.uint8)
-            # self.pixels = smoothed_pixels
-            # self.image = Image.fromarray(self.pixels)
-            # self.tk_image = ImageTk.PhotoImage(self.image)
-            # self.show_image()
         self.measureTime("END")
 
     def averageFilterOptimized(self):
@@ -265,10 +280,6 @@ class ImageRefactorApp:
                             self.pixels[y, x, c] = smoothed_pixels[y, x, c]
             # ograniczenie pixeli do wartosci od 0 do 255 oraz narysowanie obrazka
             self.limitPixelsAndShowImage(self.pixels, True)
-            # limitedPixels = np.clip(self.pixels, 0, 255).astype(np.uint8)
-            # self.image = Image.fromarray(np.uint8(limitedPixels))
-            # self.tk_image = ImageTk.PhotoImage(self.image)
-            # self.show_image()
         self.measureTime("END")
 
     def medianFilter(self):
@@ -300,11 +311,6 @@ class ImageRefactorApp:
                         else:
                             print("Jest tylko jeden pixel")
             self.limitPixelsAndShowImage(smoothed_pixels, True)
-            # smoothed_pixels = np.clip(smoothed_pixels, 0, 255).astype(np.uint8)
-            # self.pixels = smoothed_pixels
-            # self.image = Image.fromarray(self.pixels)
-            # self.tk_image = ImageTk.PhotoImage(self.image)
-            # self.show_image()
         self.measureTime("END")
 
     def medianFilterOptimized(self):
@@ -351,15 +357,60 @@ class ImageRefactorApp:
                         for c in range(3):
                             self.pixels[y, x, c] = smoothed_pixels[y, x, c]
             self.limitPixelsAndShowImage(self.pixels, True)
-            # ograniczenie pixeli do wartosci od 0 do 255 oraz narysowanie obrazka
-            # limitedPixels = np.clip(self.pixels, 0, 255).astype(np.uint8)
-            # self.image = Image.fromarray(np.uint8(limitedPixels))
-            # self.tk_image = ImageTk.PhotoImage(self.image)
-            # self.show_image()
         self.measureTime("END")
 
-    def sobelFilter(self):
-        pass
+    def sobelFilter(self, sobelVariant):
+        self.measureTime("START")
+        if self.image:
+            sobelX = np.array([[1, 0, -1], [2, 0, -2], [1, 0, -1]])
+            sobelY = np.array([[1, 2, 1], [0, 0, 0], [-1, -2, -1]])
+            height, width, _ = self.pixels.shape
+            sobelPixels = deepcopy(self.pixels)
+            for y in range(0, height):
+                for x in range(0, width):
+                    for c in range(3):  # Loop over R, G, and B channels
+                        if 0 < y < height - 1 and 0 < x < width - 1:  # srodek
+                            # sobelPixels[y, x, c] = np.sum(self.pixels[y - 1:y + 2, x - 1:x + 2, c] * sobelX)
+                            # sobelPixels[y, x, c] = np.sum(self.pixels[y - 1:y + 2, x - 1:x + 2, c] * sobelY)
+                            if sobelVariant == "0":
+                                sobelPixels[y, x, c] = np.sqrt(np.add(np.power(np.sum(self.pixels[y - 1:y + 2, x - 1:x + 2, c] * sobelX), 2), np.power(np.sum(self.pixels[y - 1:y + 2, x - 1:x + 2, c] * sobelY), 2)))
+                            elif sobelVariant == "1":
+                                sobelPixels[y, x, c] = np.sum(self.pixels[y - 1:y + 2, x - 1:x + 2, c] * sobelY)
+                            elif sobelVariant == "2":
+                                sobelPixels[y, x, c] = np.sum(self.pixels[y - 1:y + 2, x - 1:x + 2, c] * sobelX)
+                            else:
+                                raise Exception("Nie ma takiej opcji Sobela")
+                            # print(smoothed_pixels[y - 1:y + 2, x - 1:x + 2, c])
+            self.limitPixelsAndShowImage(sobelPixels, True)
+        self.measureTime("END")
+
+    def sobelFilterOptimized(self, sobelVariant):
+        self.measureTime("START")
+        if self.image:
+            if self.pixels.shape < (3, 3, 3):
+                print("Nie mozna nalozyc maski jesli wymiar obrazu jest ponizej 3x3")
+                return
+            # wyciecie wartosci czerwonych, zielonych i niebieskich pixeli osobno
+            reds, greens, blues = self.pixels[:, :, 0], self.pixels[:, :, 1], self.pixels[:, :, 2]
+            # stworzenie macierz 3x3 z sasiadujacych wartosci dla kazdej grupy
+            redSquares, greenSquares, blueSquares = np.lib.stride_tricks.sliding_window_view(reds, (3, 3)), np.lib.stride_tricks.sliding_window_view(greens, (3, 3)), np.lib.stride_tricks.sliding_window_view(blues, (3, 3))
+            # sobel z kazdej macierzy
+            sobelX = np.array([[1, 0, -1], [2, 0, -2], [1, 0, -1]])
+            sobelY = np.array([[1, 2, 1], [0, 0, 0], [-1, -2, -1]])
+            if sobelVariant == "0":
+                sobelsOfRedSquares = np.sqrt(np.add(np.power(np.sum(redSquares * sobelX, axis=(2, 3)), 2), np.power(np.sum(redSquares * sobelY, axis=(2, 3)), 2)))
+                sobelsOfGreenSquares = np.sqrt(np.add(np.power(np.sum(greenSquares * sobelX, axis=(2, 3)), 2), np.power(np.sum(greenSquares * sobelY, axis=(2, 3)), 2)))
+                sobelsOfBlueSquares = np.sqrt(np.add(np.power(np.sum(blueSquares * sobelX, axis=(2, 3)), 2), np.power(np.sum(blueSquares * sobelY, axis=(2, 3)), 2)))
+            elif sobelVariant == "1":
+                sobelsOfRedSquares, sobelsOfGreenSquares, sobelsOfBlueSquares = np.sum(redSquares * sobelY, axis=(2, 3)), np.sum(greenSquares * sobelY, axis=(2, 3)), np.sum(blueSquares * sobelY, axis=(2, 3))
+            elif sobelVariant == "2":
+                sobelsOfRedSquares, sobelsOfGreenSquares, sobelsOfBlueSquares = np.sum(redSquares * sobelX, axis=(2, 3)), np.sum(greenSquares * sobelX, axis=(2, 3)), np.sum(blueSquares * sobelX, axis=(2, 3))
+            else:
+                raise Exception("Nie ma takiej opcji Sobela")
+            # przypisanie sobeli do srodowych wartosci w macierzach
+            self.pixels[:, :, 0][1:-1, 1:-1], self.pixels[:, :, 1][1:-1, 1:-1], self.pixels[:, :, 2][1:-1, 1:-1] = sobelsOfRedSquares, sobelsOfGreenSquares, sobelsOfBlueSquares
+            self.limitPixelsAndShowImage(self.pixels, True)
+        self.measureTime("END")
 
     def highPassSharpeningFilter(self):
         pass
@@ -368,6 +419,8 @@ class ImageRefactorApp:
         pass
 
     def doPointTransformation(self):
+        if self.operationType.get() != 'lightness':
+            self.hsvPixels = None
         print(f"Wykonał: {self.operationType.get()}")
         if self.operationType.get() in ['+', '-', '*', '/']:
             self.simpleRGBOperation(self.operationType.get())
@@ -425,23 +478,27 @@ class ImageRefactorApp:
         r, g, b = round((r+m)*255), round((g+m)*255), round((b+m)*255)
         return r, g, b
 
+    def hsvBackup(self, reds, greens, blues):
+        if self.hsvPixels is None:
+            h, s, v = np.vectorize(self.convertRGBtoHSV)(reds, greens, blues)
+            self.hsvPixels = np.dstack((h, s, v))
+            # print(self.hsvPixels)
+        return self.hsvPixels[:, :, 0], self.hsvPixels[:, :, 1], self.hsvPixels[:, :, 2]
+
     def changeLightness(self):
         self.measureTime("START")
         if self.image:
             reds = self.pixels[:, :, 0]
             greens = self.pixels[:, :, 1]
             blues = self.pixels[:, :, 2]
-            h, s, v = np.vectorize(self.convertRGBtoHSV)(reds, greens, blues)
+            # h, s, v = np.vectorize(self.convertRGBtoHSV)(reds, greens, blues)
+            h, s, v = self.hsvBackup(reds, greens, blues)
             v *= max(0, min(255, float(self.lightChangeEntry.get())))
             r, g, b = np.vectorize(self.convertHSVtoRGB)(h, s, v)
             self.pixels[:, :, 0] = r
             self.pixels[:, :, 1] = g
             self.pixels[:, :, 2] = b
             self.limitPixelsAndShowImage(self.pixels, False)
-            # limitedPixels = np.clip(self.pixels, 0, 255).astype(np.uint8)
-            # self.image = Image.fromarray(np.uint8(limitedPixels))
-            # self.tk_image = ImageTk.PhotoImage(self.image)
-            # self.show_image()
         self.measureTime("END")
         print("SKONCZYL")
 
@@ -460,10 +517,6 @@ class ImageRefactorApp:
                 self.pixels[:, :, 1] = averages
                 self.pixels[:, :, 2] = averages
             self.limitPixelsAndShowImage(self.pixels, False)
-            # limitedPixels = np.clip(self.pixels, 0, 255).astype(np.uint8)
-            # self.image = Image.fromarray(np.uint8(limitedPixels))
-            # self.tk_image = ImageTk.PhotoImage(self.image)
-            # self.show_image()
         self.measureTime("END")
 
     def simpleRGBOperation(self, operator):
@@ -513,12 +566,6 @@ class ImageRefactorApp:
             else:
                 raise Exception(f"Nie właściwy operator. Nie ma operatora: {operator}")
             self.limitPixelsAndShowImage(self.pixels, False)
-            # limitedPixels = np.clip(self.pixels, 0, 255).astype(np.uint8)
-            # print(limitedPixels)
-            #
-            # self.image = Image.fromarray(np.uint8(limitedPixels))
-            # self.tk_image = ImageTk.PhotoImage(self.image)
-            # self.show_image()
         self.measureTime("END")
 
     def limitPixelsAndShowImage(self, pixels=None, limitPixels=False):
@@ -569,8 +616,6 @@ class ImageRefactorApp:
         imagetk = ImageTk.PhotoImage(self.image.resize(new_size))
         # # Use self.text object to set proper coordinates
         self.imageId = self.imageSpace.create_image(self.movedX, self.movedY, anchor='nw', image=imagetk)
-
-        # self.imageId = self.imageSpace.create_image(self.imageSpace.coords(self.text), anchor='nw', image=imagetk)
         self.imageSpace.lower(self.imageId)
         self.imageSpace.imagetk = imagetk
         # self.movedX = 0
@@ -581,19 +626,21 @@ class ImageRefactorApp:
         if filePath == '':
             return
         self.image = Image.open(filePath)
-        self.pixels = np.array(self.image, dtype=np.int32)
-        self.originalImage = deepcopy(self.image)
         if self.image is None:
             return
+        self.pixels = np.array(self.image, dtype=np.int32)
+        self.originalImage = deepcopy(self.image)
+        self.hsvPixels = None
         self.tk_image = ImageTk.PhotoImage(self.image)
         self.settingsAfterLoad()
 
     def reloadOriginalJPG(self):
         if self.originalImage:
             self.image = deepcopy(self.originalImage)
-            self.pixels = np.array(self.image, dtype=np.int32)
             if self.image is None:
                 return
+            self.hsvPixels = None
+            self.pixels = np.array(self.image, dtype=np.int32)
             self.tk_image = ImageTk.PhotoImage(self.image)
             self.settingsAfterLoad()
 
