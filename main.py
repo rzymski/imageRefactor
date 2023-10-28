@@ -7,6 +7,10 @@ if __name__ == "__main__":
 
 
 # import numpy as np
+# a = np.array([[1, 2], [3, 4]])
+# print(a)
+# a2 = np.pad(a, ((0, 0), (2, 3)), 'edge')
+# print(a2)
 #
 # # a1 = [1, 2, 3]
 # # a2 = [4, 5, 6]

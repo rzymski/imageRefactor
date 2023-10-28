@@ -359,40 +359,108 @@ class ImageRefactorApp:
             self.limitPixelsAndShowImage(self.pixels, True)
         self.measureTime("END")
 
-    def sobelFilter(self, sobelVariant):
+    def sobelFilter(self, sobelVariant, padding=True):
         self.measureTime("START")
         if self.image:
             sobelX = np.array([[1, 0, -1], [2, 0, -2], [1, 0, -1]])
             sobelY = np.array([[1, 2, 1], [0, 0, 0], [-1, -2, -1]])
             height, width, _ = self.pixels.shape
             sobelPixels = deepcopy(self.pixels)
-            for y in range(1, height-1):
-                for x in range(1, width-1):
-                    for c in range(3):  # Loop over R, G, and B channels
-                        if sobelVariant == "0":
-                            sobelPixels[y, x, c] = np.sqrt(np.add(np.power(np.sum(self.pixels[y - 1:y + 2, x - 1:x + 2, c] * sobelX), 2), np.power(np.sum(self.pixels[y - 1:y + 2, x - 1:x + 2, c] * sobelY), 2)))
-                        elif sobelVariant == "1":
-                            sobelPixels[y, x, c] = np.sum(self.pixels[y - 1:y + 2, x - 1:x + 2, c] * sobelY)
-                        elif sobelVariant == "2":
-                            sobelPixels[y, x, c] = np.sum(self.pixels[y - 1:y + 2, x - 1:x + 2, c] * sobelX)
-                        else:
-                            raise Exception("Nie ma takiej opcji Sobela")
+            if padding:
+                pad_size = 3 // 2
+                paddedImage = np.pad(self.pixels, ((pad_size, pad_size), (pad_size, pad_size), (0, 0)), mode='edge')
+                for y in range(height):
+                    for x in range(width):
+                        for c in range(3):  # Loop over R, G, and B channels
+                            if sobelVariant == "0":
+                                sobelPixels[y, x, c] = np.sqrt(np.add(np.power(np.sum(paddedImage[y:y+3, x:x+3, c] * sobelX), 2), np.power(np.sum(paddedImage[y:y+3, x:x+3, c] * sobelY), 2)))
+                            elif sobelVariant == "1":
+                                sobelPixels[y, x, c] = np.sum(paddedImage[y:y+3, x:x+3, c] * sobelY)
+                            elif sobelVariant == "2":
+                                sobelPixels[y, x, c] = np.sum(paddedImage[y:y+3, x:x+3, c] * sobelX)
+                            else:
+                                raise Exception("Nie ma takiej opcji Sobela")
+            else:
+                for y in range(1, height-1):
+                    for x in range(1, width-1):
+                        for c in range(3):  # Loop over R, G, and B channels
+                            if sobelVariant == "0":
+                                sobelPixels[y, x, c] = np.sqrt(np.add(np.power(np.sum(self.pixels[y - 1:y + 2, x - 1:x + 2, c] * sobelX), 2), np.power(np.sum(self.pixels[y - 1:y + 2, x - 1:x + 2, c] * sobelY), 2)))
+                            elif sobelVariant == "1":
+                                sobelPixels[y, x, c] = np.sum(self.pixels[y - 1:y + 2, x - 1:x + 2, c] * sobelY)
+                            elif sobelVariant == "2":
+                                sobelPixels[y, x, c] = np.sum(self.pixels[y - 1:y + 2, x - 1:x + 2, c] * sobelX)
+                            else:
+                                raise Exception("Nie ma takiej opcji Sobela")
             self.limitPixelsAndShowImage(sobelPixels, True)
         self.measureTime("END")
 
-    def sobelFilterOptimized(self, sobelVariant):
+    # def sobelFilterOptimized(self, sobelVariant, padding=True):
+    #     self.measureTime("START")
+    #     if self.image:
+    #         if self.pixels.shape < (3, 3, 3):
+    #             print("Nie mozna nalozyc maski jesli wymiar obrazu jest ponizej 3x3")
+    #             return
+    #         sobelX = np.array([[1, 0, -1], [2, 0, -2], [1, 0, -1]])
+    #         sobelY = np.array([[1, 2, 1], [0, 0, 0], [-1, -2, -1]])
+    #         if padding:
+    #             pad_size = 3 // 2
+    #             paddedImage = np.pad(self.pixels, ((pad_size, pad_size), (pad_size, pad_size), (0, 0)), mode='edge')
+    #             # wyciecie wartosci czerwonych, zielonych i niebieskich pixeli osobno
+    #             reds, greens, blues = paddedImage[:, :, 0], paddedImage[:, :, 1], paddedImage[:, :, 2]
+    #             # stworzenie macierz 3x3 z sasiadujacych wartosci dla kazdej grupy
+    #             redSquares, greenSquares, blueSquares = np.lib.stride_tricks.sliding_window_view(reds, (3, 3)), np.lib.stride_tricks.sliding_window_view(greens, (3, 3)), np.lib.stride_tricks.sliding_window_view(blues, (3, 3))
+    #             # sobel z kazdej macierzy
+    #             if sobelVariant == "0":
+    #                 sobelsOfRedSquares = np.sqrt(np.add(np.power(np.sum(redSquares * sobelX, axis=(2, 3)), 2), np.power(np.sum(redSquares * sobelY, axis=(2, 3)), 2)))
+    #                 sobelsOfGreenSquares = np.sqrt(np.add(np.power(np.sum(greenSquares * sobelX, axis=(2, 3)), 2), np.power(np.sum(greenSquares * sobelY, axis=(2, 3)), 2)))
+    #                 sobelsOfBlueSquares = np.sqrt(np.add(np.power(np.sum(blueSquares * sobelX, axis=(2, 3)), 2), np.power(np.sum(blueSquares * sobelY, axis=(2, 3)), 2)))
+    #             elif sobelVariant == "1":
+    #                 sobelsOfRedSquares, sobelsOfGreenSquares, sobelsOfBlueSquares = np.sum(redSquares * sobelY, axis=(2, 3)), np.sum(greenSquares * sobelY, axis=(2, 3)), np.sum(blueSquares * sobelY, axis=(2, 3))
+    #             elif sobelVariant == "2":
+    #                 sobelsOfRedSquares, sobelsOfGreenSquares, sobelsOfBlueSquares = np.sum(redSquares * sobelX, axis=(2, 3)), np.sum(greenSquares * sobelX, axis=(2, 3)), np.sum(blueSquares * sobelX, axis=(2, 3))
+    #             else:
+    #                 raise Exception("Nie ma takiej opcji Sobela")
+    #             # przypisanie sobeli do srodowych wartosci w macierzach
+    #             self.pixels[:, :, 0][:, :], self.pixels[:, :, 1][:, :], self.pixels[:, :, 2][:, :] = sobelsOfRedSquares, sobelsOfGreenSquares, sobelsOfBlueSquares
+    #         else:
+    #             # wyciecie wartosci czerwonych, zielonych i niebieskich pixeli osobno
+    #             reds, greens, blues = self.pixels[:, :, 0], self.pixels[:, :, 1], self.pixels[:, :, 2]
+    #             # stworzenie macierz 3x3 z sasiadujacych wartosci dla kazdej grupy
+    #             redSquares, greenSquares, blueSquares = np.lib.stride_tricks.sliding_window_view(reds, (3, 3)), np.lib.stride_tricks.sliding_window_view(greens, (3, 3)), np.lib.stride_tricks.sliding_window_view(blues, (3, 3))
+    #             # sobel z kazdej macierzy
+    #             if sobelVariant == "0":
+    #                 sobelsOfRedSquares = np.sqrt(np.add(np.power(np.sum(redSquares * sobelX, axis=(2, 3)), 2), np.power(np.sum(redSquares * sobelY, axis=(2, 3)), 2)))
+    #                 sobelsOfGreenSquares = np.sqrt(np.add(np.power(np.sum(greenSquares * sobelX, axis=(2, 3)), 2), np.power(np.sum(greenSquares * sobelY, axis=(2, 3)), 2)))
+    #                 sobelsOfBlueSquares = np.sqrt(np.add(np.power(np.sum(blueSquares * sobelX, axis=(2, 3)), 2), np.power(np.sum(blueSquares * sobelY, axis=(2, 3)), 2)))
+    #             elif sobelVariant == "1":
+    #                 sobelsOfRedSquares, sobelsOfGreenSquares, sobelsOfBlueSquares = np.sum(redSquares * sobelY, axis=(2, 3)), np.sum(greenSquares * sobelY, axis=(2, 3)), np.sum(blueSquares * sobelY, axis=(2, 3))
+    #             elif sobelVariant == "2":
+    #                 sobelsOfRedSquares, sobelsOfGreenSquares, sobelsOfBlueSquares = np.sum(redSquares * sobelX, axis=(2, 3)), np.sum(greenSquares * sobelX, axis=(2, 3)), np.sum(blueSquares * sobelX, axis=(2, 3))
+    #             else:
+    #                 raise Exception("Nie ma takiej opcji Sobela")
+    #             # przypisanie sobeli do srodowych wartosci w macierzach
+    #             self.pixels[:, :, 0][1:-1, 1:-1], self.pixels[:, :, 1][1:-1, 1:-1], self.pixels[:, :, 2][1:-1, 1:-1] = sobelsOfRedSquares, sobelsOfGreenSquares, sobelsOfBlueSquares
+    #         self.limitPixelsAndShowImage(self.pixels, True)
+    #     self.measureTime("END")
+    def sobelFilterOptimized(self, sobelVariant, padding=True):
         self.measureTime("START")
         if self.image:
             if self.pixels.shape < (3, 3, 3):
                 print("Nie mozna nalozyc maski jesli wymiar obrazu jest ponizej 3x3")
                 return
-            # wyciecie wartosci czerwonych, zielonych i niebieskich pixeli osobno
-            reds, greens, blues = self.pixels[:, :, 0], self.pixels[:, :, 1], self.pixels[:, :, 2]
+            sobelX = np.array([[1, 0, -1], [2, 0, -2], [1, 0, -1]])
+            sobelY = np.array([[1, 2, 1], [0, 0, 0], [-1, -2, -1]])
+            # dodanie obramowania (kopiowanie wartosci granicznych) przy wlaczonym obramowaniu
+            if padding:
+                pad_size = 3 // 2
+                paddedImage = np.pad(self.pixels, ((pad_size, pad_size), (pad_size, pad_size), (0, 0)), mode='edge')
+                reds, greens, blues = paddedImage[:, :, 0], paddedImage[:, :, 1], paddedImage[:, :, 2]
+            else:
+                reds, greens, blues = self.pixels[:, :, 0], self.pixels[:, :, 1], self.pixels[:, :, 2]
             # stworzenie macierz 3x3 z sasiadujacych wartosci dla kazdej grupy
             redSquares, greenSquares, blueSquares = np.lib.stride_tricks.sliding_window_view(reds, (3, 3)), np.lib.stride_tricks.sliding_window_view(greens, (3, 3)), np.lib.stride_tricks.sliding_window_view(blues, (3, 3))
             # sobel z kazdej macierzy
-            sobelX = np.array([[1, 0, -1], [2, 0, -2], [1, 0, -1]])
-            sobelY = np.array([[1, 2, 1], [0, 0, 0], [-1, -2, -1]])
             if sobelVariant == "0":
                 sobelsOfRedSquares = np.sqrt(np.add(np.power(np.sum(redSquares * sobelX, axis=(2, 3)), 2), np.power(np.sum(redSquares * sobelY, axis=(2, 3)), 2)))
                 sobelsOfGreenSquares = np.sqrt(np.add(np.power(np.sum(greenSquares * sobelX, axis=(2, 3)), 2), np.power(np.sum(greenSquares * sobelY, axis=(2, 3)), 2)))
@@ -404,7 +472,10 @@ class ImageRefactorApp:
             else:
                 raise Exception("Nie ma takiej opcji Sobela")
             # przypisanie sobeli do srodowych wartosci w macierzach
-            self.pixels[:, :, 0][1:-1, 1:-1], self.pixels[:, :, 1][1:-1, 1:-1], self.pixels[:, :, 2][1:-1, 1:-1] = sobelsOfRedSquares, sobelsOfGreenSquares, sobelsOfBlueSquares
+            if padding:
+                self.pixels[:, :, 0][:, :], self.pixels[:, :, 1][:, :], self.pixels[:, :, 2][:, :] = sobelsOfRedSquares, sobelsOfGreenSquares, sobelsOfBlueSquares
+            else:
+                self.pixels[:, :, 0][1:-1, 1:-1], self.pixels[:, :, 1][1:-1, 1:-1], self.pixels[:, :, 2][1:-1, 1:-1] = sobelsOfRedSquares, sobelsOfGreenSquares, sobelsOfBlueSquares
             self.limitPixelsAndShowImage(self.pixels, True)
         self.measureTime("END")
 
@@ -462,19 +533,16 @@ class ImageRefactorApp:
         if self.image:
             if simplified:
                 gaussianBlurMask = np.array([[1, 2, 1], [2, 4, 2], [1, 2, 1]])
+                height, width, _ = self.pixels.shape
+                gaussianBlurPixels = deepcopy(self.pixels)
                 if padding:
                     pad_size = 3 // 2
                     paddedImage = np.pad(self.pixels, ((pad_size, pad_size), (pad_size, pad_size), (0, 0)), mode='edge')
-                    gaussianBlurPixels = deepcopy(self.pixels)
-                    height, width, _ = gaussianBlurPixels.shape
                     for y in range(height):
                         for x in range(width):
                             for c in range(3):  # Loop over R, G, and B channels
-                                gaussianBlurPixels[y, x, c] = np.sum(
-                                    paddedImage[y:y + 3, x:x + 3, c] * gaussianBlurMask / 16)
+                                gaussianBlurPixels[y, x, c] = np.sum(paddedImage[y:y + 3, x:x + 3, c] * gaussianBlurMask / 16)
                 else:
-                    height, width, _ = self.pixels.shape
-                    gaussianBlurPixels = deepcopy(self.pixels)
                     for y in range(1, height - 1):
                         for x in range(1, width - 1):
                             for c in range(3):  # Loop over R, G, and B channels
@@ -506,11 +574,9 @@ class ImageRefactorApp:
             self.limitPixelsAndShowImage(gaussianBlurPixels, True)
         self.measureTime("END")
 
-    def gaussianBlurFilterOptimized(self, dim=3, simplified=True, padding=True):
+    def gaussianBlurFilterOptimized(self, dim=3, simplified=True, padding=False):
         self.measureTime("START")
         if self.image:
-            start = int(dim / 2)  # without padding
-            end = -1 * start  # without padding
             if simplified:
                 gaussianBlurMask = np.array([[1, 2, 1], [2, 4, 2], [1, 2, 1]])
                 if padding:
@@ -524,7 +590,8 @@ class ImageRefactorApp:
                     reds, greens, blues = self.pixels[:, :, 0], self.pixels[:, :, 1], self.pixels[:, :, 2]
                     redSquares, greenSquares, blueSquares = np.lib.stride_tricks.sliding_window_view(reds, (3, 3)), np.lib.stride_tricks.sliding_window_view(greens, (3, 3)), np.lib.stride_tricks.sliding_window_view(blues, (3, 3))
                     gaussianBlurOfRedSquares, gaussianBlurOfGreenSquares, gaussianBlurOfBlueSquares = np.sum(redSquares * gaussianBlurMask / 16, axis=(2, 3)), np.sum(greenSquares * gaussianBlurMask / 16, axis=(2, 3)), np.sum(blueSquares * gaussianBlurMask / 16, axis=(2, 3))
-                    self.pixels[:, :, 0][start:end, start:end], self.pixels[:, :, 1][start:end, start:end], self.pixels[:, :, 2][start:end, start:end] = gaussianBlurOfRedSquares, gaussianBlurOfGreenSquares, gaussianBlurOfBlueSquares # without padding
+                    self.pixels[:, :, 0][1:-1, 1:-1], self.pixels[:, :, 1][1:-1, 1:-1], self.pixels[:, :, 2][1:-1, 1:-1] = gaussianBlurOfRedSquares, gaussianBlurOfGreenSquares, gaussianBlurOfBlueSquares # without padding
+                    print("WYkonalo sie")
             # DZIWNIE SIE ZACHOWUJE, przesuwa obraz jakby w lewy gorny rog
             # else:
             #     if dim % 2 == 0:
@@ -551,7 +618,9 @@ class ImageRefactorApp:
             #     redSquares, greenSquares, blueSquares = np.lib.stride_tricks.sliding_window_view(reds, (dim, dim)), np.lib.stride_tricks.sliding_window_view(greens, (dim, dim)), np.lib.stride_tricks.sliding_window_view(blues, (dim, dim))
             #     gaussianBlurOfRedSquares, gaussianBlurOfGreenSquares, gaussianBlurOfBlueSquares = np.sum(redSquares * gaussianBlurMask, axis=(2, 3)), np.sum(greenSquares * gaussianBlurMask, axis=(2, 3)), np.sum(blueSquares * gaussianBlurMask, axis=(2, 3))
             #     self.pixels[:, :, 0][0:, 0:], self.pixels[:, :, 1][0:, 0:], self.pixels[:, :, 2][0:, 0:] = gaussianBlurOfRedSquares, gaussianBlurOfGreenSquares, gaussianBlurOfBlueSquares
-            #     # self.pixels[:, :, 0][start:end, start:end], self.pixels[:, :, 1][start:end, start:end], self.pixels[:, :, 2][start:end, start:end] = gaussianBlurOfRedSquares, gaussianBlurOfGreenSquares, gaussianBlurOfBlueSquares  # without padding
+            #     start = int(dim / 2)  # without padding
+            #     end = -1 * start  # without padding
+            #     self.pixels[:, :, 0][start:end, start:end], self.pixels[:, :, 1][start:end, start:end], self.pixels[:, :, 2][start:end, start:end] = gaussianBlurOfRedSquares, gaussianBlurOfGreenSquares, gaussianBlurOfBlueSquares  # without padding
             self.limitPixelsAndShowImage(self.pixels, True)
         self.measureTime("END")
 
