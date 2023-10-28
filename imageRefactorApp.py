@@ -82,7 +82,7 @@ class ImageRefactorApp:
         self.operationSubmitButton = Button(self.pointOperationsLabel, text="Perform point transformation", command=self.doPointTransformation)
         self.operationSubmitButton.grid(row=8, column=0, sticky="WE", columnspan=2)
         # Parameters for operations
-        vcmd = (self.pointOperationsLabel.register(self.validateEntryRGB))
+        vcmd = (self.pointOperationsLabel.register(self.validateEntry))
         self.parameterOperationsLabel = LabelFrame(self.pointOperationsLabel, text="Parameters", padx=10, pady=10, labelanchor="nw")
         self.parameterOperationsLabel.grid(row=7, column=0, sticky="WE")
         self.redChangeLabel = Label(self.parameterOperationsLabel, text="Red")
@@ -131,8 +131,10 @@ class ImageRefactorApp:
         self.filterHighPassSharpening.grid(row=6, column=0, sticky="W")
         self.filterGaussianBlur = Radiobutton(self.filterLabel, text="Gaussian Blur filter", value="4", variable=self.filterType, command=self.onFilterSelect)
         self.filterGaussianBlur.grid(row=7, column=0, sticky="W")
+        self.filterCustomMask = Radiobutton(self.filterLabel, text="Custom mask filter", value="5", variable=self.filterType, command=self.onFilterSelect)
+        self.filterCustomMask.grid(row=8, column=0, sticky="W")
         self.filterSubmitButton = Button(self.filterLabel, text="Apply filter", command=self.applyFilter)
-        self.filterSubmitButton.grid(row=8, column=0, sticky="WE")
+        self.filterSubmitButton.grid(row=9, column=0, sticky="WE")
 
         self.imageSpace = Canvas(self.root, bg="white")
         self.imageSpace.pack(fill="both", expand=True)
@@ -145,7 +147,11 @@ class ImageRefactorApp:
 
         self.hsvPixels = None
 
-    def validateEntryRGB(self, P):
+        self.labelCustomMask = None
+        self.entriesData = [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]]
+        # self.entries = []
+
+    def validateEntry(self, P):
         pattern = r'^-?\d*(\.\d*)?$'
         if re.match(pattern, P) is not None:
             return True
@@ -188,21 +194,175 @@ class ImageRefactorApp:
             raise Exception("Nie ma takiej opcji")
 
     def applyFilter(self):
-        self.hsvPixels = None
-        includeEdges = True if self.switchEdgesState.get() == "yes" else False
-        print(f"Zastosowano filtr: {self.filterType.get()} optymalizacja: {self.switchOptimizedState.get()} uzwglednia krawedzie: {includeEdges}")
-        if self.filterType.get() == '0':
-            self.averageFilter(padding=includeEdges) if self.switchOptimizedState.get() == "off" else self.averageFilterOptimized(padding=includeEdges)
-        elif self.filterType.get() == '1':
-            self.medianFilter(padding=includeEdges) if self.switchOptimizedState.get() == "off" else self.medianFilterOptimized(padding=includeEdges)
-        elif self.filterType.get() == '2':
-            self.sobelFilter(self.sobelOption.get(), padding=includeEdges) if self.switchOptimizedState.get() == "off" else self.sobelFilterOptimized(self.sobelOption.get(), padding=includeEdges)
-        elif self.filterType.get() == '3':
-            self.highPassSharpeningFilter(padding=includeEdges) if self.switchOptimizedState.get() == "off" else self.highPassSharpeningFilterOptimized(padding=includeEdges)
-        elif self.filterType.get() == '4':
-            self.gaussianBlurFilter(padding=includeEdges) if self.switchOptimizedState.get() == "off" else self.gaussianBlurFilterOptimized(padding=includeEdges)
-        else:
-            raise Exception(f"Nie ma takiego filtra {self.filterType.get()}")
+        if self.image:
+            self.hsvPixels = None
+            includeEdges = True if self.switchEdgesState.get() == "yes" else False
+            print(f"Zastosowano filtr: {self.filterType.get()} optymalizacja: {self.switchOptimizedState.get()} uzwglednia krawedzie: {includeEdges}")
+            if self.filterType.get() == '0':
+                self.averageFilter(padding=includeEdges) if self.switchOptimizedState.get() == "off" else self.averageFilterOptimized(padding=includeEdges)
+            elif self.filterType.get() == '1':
+                self.medianFilter(padding=includeEdges) if self.switchOptimizedState.get() == "off" else self.medianFilterOptimized(padding=includeEdges)
+            elif self.filterType.get() == '2':
+                self.sobelFilter(self.sobelOption.get(), padding=includeEdges) if self.switchOptimizedState.get() == "off" else self.sobelFilterOptimized(self.sobelOption.get(), padding=includeEdges)
+            elif self.filterType.get() == '3':
+                self.highPassSharpeningFilter(padding=includeEdges) if self.switchOptimizedState.get() == "off" else self.highPassSharpeningFilterOptimized(padding=includeEdges)
+            elif self.filterType.get() == '4':
+                self.gaussianBlurFilter(padding=includeEdges) if self.switchOptimizedState.get() == "off" else self.gaussianBlurFilterOptimized(padding=includeEdges)
+            elif self.filterType.get() == '5':
+                self.labelCustomMask = None
+                self.initCustomMaskCreator()
+            else:
+                raise Exception(f"Nie ma takiego filtra {self.filterType.get()}")
+
+    def initCustomMaskCreator(self):
+        print(self.entriesData)
+        # print("Ilosc widgetow entry", len(self.entries))
+        if self.labelCustomMask == None:
+            self.labelCustomMask = Label(Toplevel(), padx=10, pady=10)
+            self.labelCustomMask.pack(side="top", fill="both", expand=True)
+        self.deleteRowButton = Button(self.labelCustomMask, text="Delete row", command=self.deleteRow, padx=50, pady=25)
+        self.deleteRowButton.grid(row=0, column=0, sticky="nsew")
+        self.deleteColumnButton = Button(self.labelCustomMask, text="Delete column", command=self.deleteColumn, padx=50, pady=25)
+        self.deleteColumnButton.grid(row=1, column=0, sticky="nsew")
+        self.addRowButton = Button(self.labelCustomMask, text="Add row", command=self.addRow, padx=50, pady=25)
+        self.addRowButton.grid(row=0, column=1, sticky="nsew")
+        self.addColumnButton = Button(self.labelCustomMask, text="Add column", command=self.addColumn, padx=50, pady=25)
+        self.addColumnButton.grid(row=1, column=1, sticky="nsew")
+        self.createMaskButton = Button(self.labelCustomMask, text="Use mask", command=self.createMask, padx=50, pady=10)
+        self.createMaskButton.grid(row=3, column=1, sticky="nsew")
+        self.cancelButton = Button(self.labelCustomMask, text="Cancel", command=self.cancel, padx=50, pady=10)
+        self.cancelButton.grid(row=3, column=0, sticky="nsew")
+        bigFont = font.Font(size=30, weight="bold")
+        self.deleteRowButton['font'] = self.deleteColumnButton['font'] = self.addRowButton['font'] = self.addColumnButton['font'] = bigFont
+        mediumFont = font.Font(size=20, weight="bold")
+        self.createMaskButton['font'] = self.cancelButton['font'] = mediumFont
+
+        self.entriesLabel = Label(self.labelCustomMask)
+        self.entriesLabel.grid(row=2, column=0, columnspan=2, sticky="nsew")
+        for rowIndex, rowData in enumerate(self.entriesData):
+            for columnIndex, entryData in enumerate(rowData):
+                vcmd = (self.entriesLabel.register(self.validateEntry), '%P')
+                myVar = StringVar()
+                entry = Entry(self.entriesLabel, justify="center", font=bigFont, textvariable=myVar, validate="all", validatecommand=vcmd)
+                myVar.trace('w', lambda name, index, mode, var=myVar, row=rowIndex, col=columnIndex: self.entryChanged(row, col, var.get()))
+                entry.grid(row=rowIndex, column=columnIndex, sticky="nsew")
+                entry.insert(0, self.entriesData[rowIndex][columnIndex])
+                # self.entries.append(entry)
+                # print(f"R={rowIndex} C={columnIndex}")
+
+        for row in range(len(self.entriesData)):
+            self.entriesLabel.rowconfigure(row, weight=1)
+        if len(self.entriesData) > 0:
+            for column in range(len(self.entriesData[0])):
+                self.entriesLabel.columnconfigure(column, weight=1)
+        self.labelCustomMask.columnconfigure(0, weight=1)
+        self.labelCustomMask.columnconfigure(1, weight=1)
+        self.labelCustomMask.rowconfigure(0, weight=1)
+        self.labelCustomMask.rowconfigure(1, weight=1)
+        self.labelCustomMask.rowconfigure(2, weight=1)
+
+    def entryChanged(self, row, column, value):
+        # print(f"Changed at row {row}, column {column}, New value: {value}")
+        try:
+            self.entriesData[row][column] = float(value)
+        except:
+            print(f"Nie mozna przekonwertowac {value} na floata")
+
+    def destroyCustomMaskCreator(self):
+        self.clearCustomMaskCreator()
+        self.labelCustomMask.winfo_toplevel().destroy()
+        self.labelCustomMask = None
+
+    def clearCustomMaskCreator(self):
+        self.deleteRowButton.destroy()
+        self.deleteColumnButton.destroy()
+        self.addRowButton.destroy()
+        self.addColumnButton.destroy()
+        #Jesli chce sie zeby nie zachowywal danych po zamknieciu okna
+        # self.entriesData = [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]]
+        self.entriesLabel.destroy()
+        self.createMaskButton.destroy()
+        self.cancelButton.destroy()
+
+
+    def addRow(self):
+        print("Dodano rzad")
+        for x in range(2):
+            self.entriesData.append([])
+            for i in range(len(self.entriesData[0])):
+                self.entriesData[-1].append(0.0)
+        #self.destroyCustomMaskCreator()
+        self.initCustomMaskCreator()
+
+    def addColumn(self):
+        print("Dodano kolumne")
+        for x in range(2):
+            for entry in self.entriesData:
+                entry.append(0.0)
+        #self.destroyCustomMaskCreator()
+        self.initCustomMaskCreator()
+
+    def deleteRow(self):
+        print("Usunieto rzad")
+        for x in range(2):
+            if len(self.entriesData) > 1:
+                self.entriesData.pop()
+        #self.destroyCustomMaskCreator()
+        self.initCustomMaskCreator()
+
+    def deleteColumn(self):
+        print("Usunieto kolumne")
+        for x in range(2):
+            if len(self.entriesData[0]) > 1:
+                for entry in self.entriesData:
+                    entry.pop()
+        #self.destroyCustomMaskCreator()
+        self.initCustomMaskCreator()
+
+    def createMask(self):
+        print(f"Wykonaj maske {self.entriesData}")
+        mask = np.array(self.entriesData)
+        print(mask)
+        self.measureTime("START")
+        if self.image:
+            # maskHeight, maskWidth = mask.shape
+            dimY, dimX = mask.shape
+            includeEdges = True if self.switchEdgesState.get() == "yes" else False
+            if self.pixels.shape < (dimY, dimX, 3):
+                print("Nie mozna nalozyc maski jesli wymiar obrazu jest ponizej wymiaru maski")
+                return
+            # dodanie obramowania (kopiowanie wartosci granicznych) przy wlaczonym obramowaniu
+            if includeEdges:
+                padY = dimX // 2
+                padX = dimY // 2
+                paddedImage = np.pad(self.pixels, ((padY, padX), (padY, padX), (0, 0)), mode='edge')
+                reds, greens, blues = paddedImage[:, :, 0], paddedImage[:, :, 1], paddedImage[:, :, 2]
+                print(f"reds: {reds}")
+            else:
+                reds, greens, blues = self.pixels[:, :, 0], self.pixels[:, :, 1], self.pixels[:, :, 2]
+            # stworzenie prostokatow z sasiadujacych wartosci dla kazdej grupy
+            redSquares, greenSquares, blueSquares = np.lib.stride_tricks.sliding_window_view(reds, (dimY, dimX)), np.lib.stride_tricks.sliding_window_view(greens, (dimY, dimX)), np.lib.stride_tricks.sliding_window_view(blues, (dimY, dimX))
+
+            print(f"RSquares {redSquares}")
+            # customMask z kazdej macierzy
+            customMasksOfRedSquares, customMasksOfGreenSquares, customMasksOfBlueSquares = np.sum(redSquares * mask, axis=(2, 3)), np.sum(greenSquares * mask, axis=(2, 3)), np.sum(blueSquares * mask, axis=(2, 3))
+            print(f"Custom = {customMasksOfRedSquares}")
+            # przypisanie customMask do srodowych wartosci w macierzach
+            if includeEdges:
+                self.pixels[:, :, 0][:, :], self.pixels[:, :, 1][:, :], self.pixels[:, :, 2][:, :] = customMasksOfRedSquares, customMasksOfGreenSquares, customMasksOfBlueSquares
+            else:
+                startY = int(dimY / 2)
+                endY = -1 * startY
+                startX = int(dimX / 2)
+                endX = -1 * startX
+                self.pixels[:, :, 0][startY:endY, startX:endX], self.pixels[:, :, 1][startY:endY, startX:endX], self.pixels[:, :, 2][startY:endY, startX:endX] = customMasksOfRedSquares, customMasksOfGreenSquares, customMasksOfBlueSquares
+            self.limitPixelsAndShowImage(self.pixels, True)
+        self.measureTime("END")
+
+
+    def cancel(self):
+        print("Zamknij")
+        self.destroyCustomMaskCreator()
 
     def averageFilter(self, padding=True):
         self.measureTime("START")
