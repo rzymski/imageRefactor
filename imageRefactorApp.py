@@ -457,17 +457,28 @@ class ImageRefactorApp:
             self.limitPixelsAndShowImage(self.pixels, True)
         self.measureTime("END")
 
-    def gaussianBlurFilter(self, dim=3, simplified=True):
+    def gaussianBlurFilter(self, dim=3, simplified=True, padding=True):
         self.measureTime("START")
         if self.image:
-            height, width, _ = self.pixels.shape
-            gaussianBlurPixels = deepcopy(self.pixels)
             if simplified:
                 gaussianBlurMask = np.array([[1, 2, 1], [2, 4, 2], [1, 2, 1]])
-                for y in range(1, height - 1):
-                    for x in range(1, width - 1):
-                        for c in range(3):  # Loop over R, G, and B channels
-                            gaussianBlurPixels[y, x, c] = np.sum(self.pixels[y - 1:y + 2, x - 1:x + 2, c] * gaussianBlurMask / 16)
+                if padding:
+                    pad_size = 3 // 2
+                    paddedImage = np.pad(self.pixels, ((pad_size, pad_size), (pad_size, pad_size), (0, 0)), mode='edge')
+                    gaussianBlurPixels = deepcopy(self.pixels)
+                    height, width, _ = gaussianBlurPixels.shape
+                    for y in range(height):
+                        for x in range(width):
+                            for c in range(3):  # Loop over R, G, and B channels
+                                gaussianBlurPixels[y, x, c] = np.sum(
+                                    paddedImage[y:y + 3, x:x + 3, c] * gaussianBlurMask / 16)
+                else:
+                    height, width, _ = self.pixels.shape
+                    gaussianBlurPixels = deepcopy(self.pixels)
+                    for y in range(1, height - 1):
+                        for x in range(1, width - 1):
+                            for c in range(3):  # Loop over R, G, and B channels
+                                gaussianBlurPixels[y, x, c] = np.sum(self.pixels[y - 1:y + 2, x - 1:x + 2, c] * gaussianBlurMask / 16)
             # DZIWNIE SIE ZACHOWUJE, przesuwa obraz jakby w lewy gorny rog
             # else:
             #     if dim % 2 == 0:
@@ -495,18 +506,25 @@ class ImageRefactorApp:
             self.limitPixelsAndShowImage(gaussianBlurPixels, True)
         self.measureTime("END")
 
-    def gaussianBlurFilterOptimized(self, dim=3, simplified=True):
+    def gaussianBlurFilterOptimized(self, dim=3, simplified=True, padding=True):
         self.measureTime("START")
         if self.image:
+            start = int(dim / 2)  # without padding
+            end = -1 * start  # without padding
             if simplified:
                 gaussianBlurMask = np.array([[1, 2, 1], [2, 4, 2], [1, 2, 1]])
-                reds, greens, blues = self.pixels[:, :, 0], self.pixels[:, :, 1], self.pixels[:, :, 2]
-                redSquares, greenSquares, blueSquares = np.lib.stride_tricks.sliding_window_view(reds, (dim, dim)), np.lib.stride_tricks.sliding_window_view(greens, (dim, dim)), np.lib.stride_tricks.sliding_window_view(blues, (dim, dim))
-                gaussianBlurOfRedSquares, gaussianBlurOfGreenSquares, gaussianBlurOfBlueSquares = np.sum(redSquares * gaussianBlurMask / 16, axis=(2, 3)), np.sum(greenSquares * gaussianBlurMask / 16, axis=(2, 3)), np.sum(blueSquares * gaussianBlurMask / 16, axis=(2, 3))
-                start = int(dim / 2)
-                end = -1 * start
-                self.pixels[:, :, 0][start:end, start:end], self.pixels[:, :, 1][start:end, start:end], self.pixels[:, :, 2][start:end, start:end] = gaussianBlurOfRedSquares, gaussianBlurOfGreenSquares, gaussianBlurOfBlueSquares
-                print("OK")
+                if padding:
+                    pad_size = 3 // 2
+                    paddedImage = np.pad(self.pixels, ((pad_size, pad_size), (pad_size, pad_size), (0, 0)), mode='edge')
+                    reds, greens, blues = paddedImage[:, :, 0], paddedImage[:, :, 1], paddedImage[:, :, 2]
+                    redSquares, greenSquares, blueSquares = np.lib.stride_tricks.sliding_window_view(reds, (3, 3)), np.lib.stride_tricks.sliding_window_view(greens, (3, 3)), np.lib.stride_tricks.sliding_window_view(blues, (3, 3))
+                    gaussianBlurOfRedSquares, gaussianBlurOfGreenSquares, gaussianBlurOfBlueSquares = np.sum(redSquares * gaussianBlurMask / 16, axis=(2, 3)), np.sum(greenSquares * gaussianBlurMask / 16, axis=(2, 3)), np.sum(blueSquares * gaussianBlurMask / 16, axis=(2, 3))
+                    self.pixels[:, :, 0][:, :], self.pixels[:, :, 1][:, :], self.pixels[:, :, 2][:, :] = gaussianBlurOfRedSquares, gaussianBlurOfGreenSquares, gaussianBlurOfBlueSquares
+                else:
+                    reds, greens, blues = self.pixels[:, :, 0], self.pixels[:, :, 1], self.pixels[:, :, 2]
+                    redSquares, greenSquares, blueSquares = np.lib.stride_tricks.sliding_window_view(reds, (3, 3)), np.lib.stride_tricks.sliding_window_view(greens, (3, 3)), np.lib.stride_tricks.sliding_window_view(blues, (3, 3))
+                    gaussianBlurOfRedSquares, gaussianBlurOfGreenSquares, gaussianBlurOfBlueSquares = np.sum(redSquares * gaussianBlurMask / 16, axis=(2, 3)), np.sum(greenSquares * gaussianBlurMask / 16, axis=(2, 3)), np.sum(blueSquares * gaussianBlurMask / 16, axis=(2, 3))
+                    self.pixels[:, :, 0][start:end, start:end], self.pixels[:, :, 1][start:end, start:end], self.pixels[:, :, 2][start:end, start:end] = gaussianBlurOfRedSquares, gaussianBlurOfGreenSquares, gaussianBlurOfBlueSquares # without padding
             # DZIWNIE SIE ZACHOWUJE, przesuwa obraz jakby w lewy gorny rog
             # else:
             #     if dim % 2 == 0:
@@ -525,11 +543,15 @@ class ImageRefactorApp:
             #     for x in range(dim):
             #         for y in range(dim):
             #             gaussianBlurMask[x, y] = gaussianBlurMask[x, y] / sumGaussElements
+            #     #padding
+            #     pad_size = dim // 2
+            #     padded_image = np.pad(self.pixels, ((pad_size, pad_size), (pad_size, pad_size), (0, 0)), mode='edge')
             #     #
-            #     reds, greens, blues = self.pixels[:, :, 0], self.pixels[:, :, 1], self.pixels[:, :, 2]
+            #     reds, greens, blues = padded_image[:, :, 0], padded_image[:, :, 1], padded_image[:, :, 2]
             #     redSquares, greenSquares, blueSquares = np.lib.stride_tricks.sliding_window_view(reds, (dim, dim)), np.lib.stride_tricks.sliding_window_view(greens, (dim, dim)), np.lib.stride_tricks.sliding_window_view(blues, (dim, dim))
             #     gaussianBlurOfRedSquares, gaussianBlurOfGreenSquares, gaussianBlurOfBlueSquares = np.sum(redSquares * gaussianBlurMask, axis=(2, 3)), np.sum(greenSquares * gaussianBlurMask, axis=(2, 3)), np.sum(blueSquares * gaussianBlurMask, axis=(2, 3))
-            #     self.pixels[:, :, 0][halfDim:minusHalfDim, halfDim:minusHalfDim], self.pixels[:, :, 1][halfDim:minusHalfDim, halfDim:minusHalfDim], self.pixels[:, :, 2][halfDim:minusHalfDim, halfDim:minusHalfDim] = gaussianBlurOfRedSquares, gaussianBlurOfGreenSquares, gaussianBlurOfBlueSquares
+            #     self.pixels[:, :, 0][0:, 0:], self.pixels[:, :, 1][0:, 0:], self.pixels[:, :, 2][0:, 0:] = gaussianBlurOfRedSquares, gaussianBlurOfGreenSquares, gaussianBlurOfBlueSquares
+            #     # self.pixels[:, :, 0][start:end, start:end], self.pixels[:, :, 1][start:end, start:end], self.pixels[:, :, 2][start:end, start:end] = gaussianBlurOfRedSquares, gaussianBlurOfGreenSquares, gaussianBlurOfBlueSquares  # without padding
             self.limitPixelsAndShowImage(self.pixels, True)
         self.measureTime("END")
 
