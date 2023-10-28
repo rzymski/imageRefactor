@@ -104,16 +104,18 @@ class ImageRefactorApp:
         self.filterLabel.grid(row=6, column=0, sticky="WE")
         # RadioButtons for filters
         self.filterType = StringVar(value="0")
-        # self.filterType.set("0")
-        self.switchState = StringVar(value="on")
-        self.optimizationSwitch = ctk.CTkSwitch(self.filterLabel, text="Optimization", variable=self.switchState, onvalue="on", offvalue="off", button_color="black")  # progress_color="blue"
+        self.switchOptimizedState = StringVar(value="on")
+        self.optimizationSwitch = ctk.CTkSwitch(self.filterLabel, text="Optimization", variable=self.switchOptimizedState, onvalue="on", offvalue="off", button_color="black")  # progress_color="blue"
         self.optimizationSwitch.grid(row=0, column=0, sticky="WE")
+        self.switchEdgesState = StringVar(value="yes")
+        self.edgesSwitch = ctk.CTkSwitch(self.filterLabel, text="Include edges", variable=self.switchEdgesState, onvalue="yes", offvalue="no", button_color="black")  # progress_color="blue"
+        self.edgesSwitch.grid(row=1, column=0, sticky="WE")
         self.filterAverage = Radiobutton(self.filterLabel, text="Average filter", value="0", variable=self.filterType, command=self.onFilterSelect)
-        self.filterAverage.grid(row=1, column=0, sticky="W")
+        self.filterAverage.grid(row=2, column=0, sticky="W")
         self.filterMedian = Radiobutton(self.filterLabel, text="Median filter", value="1", variable=self.filterType, command=self.onFilterSelect)
-        self.filterMedian.grid(row=2, column=0, sticky="W")
+        self.filterMedian.grid(row=3, column=0, sticky="W")
         self.filterSobel = Radiobutton(self.filterLabel, text="Sobel filter", value="2", variable=self.filterType, command=self.onFilterSelect)
-        self.filterSobel.grid(row=3, column=0, sticky="W")
+        self.filterSobel.grid(row=4, column=0, sticky="W")
         # label for sobel filter options
         self.sobelOptionsLabel = LabelFrame(self.filterLabel, text="Sobel options", padx=10, pady=10, labelanchor="nw")
         # Options filter Sobel both, horizontal or vertical
@@ -126,11 +128,11 @@ class ImageRefactorApp:
         self.sobelVertical.grid(row=2, column=0, sticky="W")
         # RadioButtons for filters
         self.filterHighPassSharpening = Radiobutton(self.filterLabel, text="High pass sharpening filter", value="3", variable=self.filterType, command=self.onFilterSelect)
-        self.filterHighPassSharpening.grid(row=5, column=0, sticky="W")
+        self.filterHighPassSharpening.grid(row=6, column=0, sticky="W")
         self.filterGaussianBlur = Radiobutton(self.filterLabel, text="Gaussian Blur filter", value="4", variable=self.filterType, command=self.onFilterSelect)
-        self.filterGaussianBlur.grid(row=6, column=0, sticky="W")
+        self.filterGaussianBlur.grid(row=7, column=0, sticky="W")
         self.filterSubmitButton = Button(self.filterLabel, text="Apply filter", command=self.applyFilter)
-        self.filterSubmitButton.grid(row=7, column=0, sticky="WE")
+        self.filterSubmitButton.grid(row=8, column=0, sticky="WE")
 
         self.imageSpace = Canvas(self.root, bg="white")
         self.imageSpace.pack(fill="both", expand=True)
@@ -155,7 +157,7 @@ class ImageRefactorApp:
 
     def onFilterSelect(self):
         if self.filterType.get() == "2":
-            self.sobelOptionsLabel.grid(row=4, column=0, sticky="WE")
+            self.sobelOptionsLabel.grid(row=5, column=0, sticky="WE")
         else:
             self.sobelOptionsLabel.grid_forget()
 
@@ -187,21 +189,22 @@ class ImageRefactorApp:
 
     def applyFilter(self):
         self.hsvPixels = None
-        print(f"Zastosowano filtr: {self.filterType.get()} optymalizacja jest {self.switchState.get()}")
+        includeEdges = True if self.switchEdgesState.get() == "yes" else False
+        print(f"Zastosowano filtr: {self.filterType.get()} optymalizacja: {self.switchOptimizedState.get()} uzwglednia krawedzie: {includeEdges}")
         if self.filterType.get() == '0':
-            self.averageFilter() if self.switchState.get() == "off" else self.averageFilterOptimized()
+            self.averageFilter(padding=includeEdges) if self.switchOptimizedState.get() == "off" else self.averageFilterOptimized(padding=includeEdges)
         elif self.filterType.get() == '1':
-            self.medianFilter() if self.switchState.get() == "off" else self.medianFilterOptimized()
+            self.medianFilter(padding=includeEdges) if self.switchOptimizedState.get() == "off" else self.medianFilterOptimized(padding=includeEdges)
         elif self.filterType.get() == '2':
-            self.sobelFilter(self.sobelOption.get()) if self.switchState.get() == "off" else self.sobelFilterOptimized(self.sobelOption.get())
+            self.sobelFilter(self.sobelOption.get(), padding=includeEdges) if self.switchOptimizedState.get() == "off" else self.sobelFilterOptimized(self.sobelOption.get(), padding=includeEdges)
         elif self.filterType.get() == '3':
-            self.highPassSharpeningFilter() if self.switchState.get() == "off" else self.highPassSharpeningFilterOptimized()
+            self.highPassSharpeningFilter(padding=includeEdges) if self.switchOptimizedState.get() == "off" else self.highPassSharpeningFilterOptimized(padding=includeEdges)
         elif self.filterType.get() == '4':
-            self.gaussianBlurFilter() if self.switchState.get() == "off" else self.gaussianBlurFilterOptimized()
+            self.gaussianBlurFilter(padding=includeEdges) if self.switchOptimizedState.get() == "off" else self.gaussianBlurFilterOptimized(padding=includeEdges)
         else:
             raise Exception(f"Nie ma takiego filtra {self.filterType.get()}")
 
-    def averageFilter(self):
+    def averageFilter(self, padding=True):
         self.measureTime("START")
         if self.image:
             # mask = np.array([[1 / 9, 1 / 9, 1 / 9], [1 / 9, 1 / 9, 1 / 9], [1 / 9, 1 / 9, 1 / 9]])
@@ -214,6 +217,8 @@ class ImageRefactorApp:
                             # smoothed_pixels[y, x, c] = np.average(self.pixels[y - 1:y + 2, x - 1:x + 2, c], weights=mask)
                             smoothed_pixels[y, x, c] = np.average(self.pixels[y - 1:y + 2, x - 1:x + 2, c])
                             # print(smoothed_pixels[y - 1:y + 2, x - 1:x + 2, c])
+                        elif not padding:
+                            continue
                         elif 0 < y < height - 1 and 0 < x:  # krawedz prawa
                             smoothed_pixels[y, x, c] = np.average(self.pixels[y - 1:y + 2, x - 1:x + 1, c])
                         elif 0 < y < height - 1 and x < width - 1:  # krawedz lewa
@@ -235,32 +240,33 @@ class ImageRefactorApp:
             self.limitPixelsAndShowImage(smoothed_pixels, True)
         self.measureTime("END")
 
-    def averageFilterOptimized(self):
+    def averageFilterOptimized(self, padding=True):
         self.measureTime("START")
         if self.image:
             # filtrowanie krawedzi
-            height, width, _ = self.pixels.shape
-            smoothed_pixels = deepcopy(self.pixels)
-            for y in range(0, height):
-                for x in range(0, width):
-                    if y == 0 or y == height - 1 or x == 0 or x == width - 1:
-                        for c in range(3):  # Loop over R, G, and B channels
-                            if 0 < y < height - 1 and 0 < x:  # krawedz prawa
-                                smoothed_pixels[y, x, c] = np.average(self.pixels[y - 1:y + 2, x - 1:x + 1, c])
-                            elif 0 < y < height - 1 and x < width - 1:  # krawedz lewa
-                                smoothed_pixels[y, x, c] = np.average(self.pixels[y - 1:y + 2, x:x + 2, c])
-                            elif 0 < y and 0 < x < width - 1:  # dol
-                                smoothed_pixels[y, x, c] = np.average(self.pixels[y - 1:y + 1, x - 1:x + 2, c])
-                            elif y < height - 1 and 0 < x < width - 1:  # gora
-                                smoothed_pixels[y, x, c] = np.average(self.pixels[y:y + 2, x - 1:x + 2, c])
-                            elif x == 0 and y == 0:  # lewy gorny rog
-                                smoothed_pixels[y, x, c] = np.average(self.pixels[y:y + 2, x:x + 2, c])
-                            elif x == width - 1 and y == 0:  # prawy gorny rog
-                                smoothed_pixels[y, x, c] = np.average(self.pixels[y:y + 2, x:x + 1, c])
-                            elif x == 0 and y == height - 1:  # lewy dolny rog
-                                smoothed_pixels[y, x, c] = np.average(self.pixels[y - 1:y + 1, x:x + 2, c])
-                            elif x == width - 1 and y == height - 1:  # prawy dolny rog
-                                smoothed_pixels[y, x, c] = np.average(self.pixels[y - 1:y + 1, x - 1:x + 1, c])
+            if padding:
+                height, width, _ = self.pixels.shape
+                smoothed_pixels = deepcopy(self.pixels)
+                for y in range(0, height):
+                    for x in range(0, width):
+                        if y == 0 or y == height - 1 or x == 0 or x == width - 1:
+                            for c in range(3):  # Loop over R, G, and B channels
+                                if 0 < y < height - 1 and 0 < x:  # krawedz prawa
+                                    smoothed_pixels[y, x, c] = np.average(self.pixels[y - 1:y + 2, x - 1:x + 1, c])
+                                elif 0 < y < height - 1 and x < width - 1:  # krawedz lewa
+                                    smoothed_pixels[y, x, c] = np.average(self.pixels[y - 1:y + 2, x:x + 2, c])
+                                elif 0 < y and 0 < x < width - 1:  # dol
+                                    smoothed_pixels[y, x, c] = np.average(self.pixels[y - 1:y + 1, x - 1:x + 2, c])
+                                elif y < height - 1 and 0 < x < width - 1:  # gora
+                                    smoothed_pixels[y, x, c] = np.average(self.pixels[y:y + 2, x - 1:x + 2, c])
+                                elif x == 0 and y == 0:  # lewy gorny rog
+                                    smoothed_pixels[y, x, c] = np.average(self.pixels[y:y + 2, x:x + 2, c])
+                                elif x == width - 1 and y == 0:  # prawy gorny rog
+                                    smoothed_pixels[y, x, c] = np.average(self.pixels[y:y + 2, x:x + 1, c])
+                                elif x == 0 and y == height - 1:  # lewy dolny rog
+                                    smoothed_pixels[y, x, c] = np.average(self.pixels[y - 1:y + 1, x:x + 2, c])
+                                elif x == width - 1 and y == height - 1:  # prawy dolny rog
+                                    smoothed_pixels[y, x, c] = np.average(self.pixels[y - 1:y + 1, x - 1:x + 1, c])
             if self.pixels.shape < (3, 3, 3):
                 print("Nie mozna nalozyc maski jesli wymiar obrazu jest ponizej 3x3")
                 return
@@ -273,16 +279,17 @@ class ImageRefactorApp:
             # przypisanie median do srodowych wartosci w macierzach
             self.pixels[:, :, 0][1:-1, 1:-1], self.pixels[:, :, 1][1:-1, 1:-1], self.pixels[:, :, 2][1:-1, 1:-1] = averagesOfRedSquares, averagesOfGreenSquares, averagesOfBlueSquares
             # dodanie krawedzi fo pixeli
-            for y in range(0, height):
-                for x in range(0, width):
-                    if y == 0 or y == height - 1 or x == 0 or x == width - 1:
-                        for c in range(3):
-                            self.pixels[y, x, c] = smoothed_pixels[y, x, c]
+            if padding:
+                for y in range(0, height):
+                    for x in range(0, width):
+                        if y == 0 or y == height - 1 or x == 0 or x == width - 1:
+                            for c in range(3):
+                                self.pixels[y, x, c] = smoothed_pixels[y, x, c]
             # ograniczenie pixeli do wartosci od 0 do 255 oraz narysowanie obrazka
             self.limitPixelsAndShowImage(self.pixels, True)
         self.measureTime("END")
 
-    def medianFilter(self):
+    def medianFilter(self, padding=True):
         self.measureTime("START")
         if self.image:
             height, width, _ = self.pixels.shape
@@ -292,6 +299,8 @@ class ImageRefactorApp:
                     for c in range(3):  # Loop over R, G, and B channels
                         if 0 < y < height-1 and 0 < x < width-1:  # srodek
                             smoothed_pixels[y, x, c] = np.median(self.pixels[y - 1:y + 2, x - 1:x + 2, c])
+                        elif not padding:
+                            continue
                         elif 0 < y < height-1 and 0 < x:  # krawedz prawa
                             smoothed_pixels[y, x, c] = np.median(self.pixels[y - 1:y + 2, x - 1:x + 1, c])
                         elif 0 < y < height-1 and x < width-1:  # krawedz lewa
@@ -313,32 +322,33 @@ class ImageRefactorApp:
             self.limitPixelsAndShowImage(smoothed_pixels, True)
         self.measureTime("END")
 
-    def medianFilterOptimized(self):
+    def medianFilterOptimized(self, padding=True):
         self.measureTime("START")
         if self.image:
             # filtrowanie krawedzi
-            height, width, _ = self.pixels.shape
-            smoothed_pixels = deepcopy(self.pixels)
-            for y in range(0, height):
-                for x in range(0, width):
-                    if y == 0 or y == height - 1 or x == 0 or x == width - 1:
-                        for c in range(3):  # Loop over R, G, and B channels
-                            if 0 < y < height - 1 and 0 < x:  # krawedz prawa
-                                smoothed_pixels[y, x, c] = np.median(self.pixels[y - 1:y + 2, x - 1:x + 1, c])
-                            elif 0 < y < height - 1 and x < width - 1:  # krawedz lewa
-                                smoothed_pixels[y, x, c] = np.median(self.pixels[y - 1:y + 2, x:x + 2, c])
-                            elif 0 < y and 0 < x < width - 1:  # dol
-                                smoothed_pixels[y, x, c] = np.median(self.pixels[y - 1:y + 1, x - 1:x + 2, c])
-                            elif y < height - 1 and 0 < x < width - 1:  # gora
-                                smoothed_pixels[y, x, c] = np.median(self.pixels[y:y + 2, x - 1:x + 2, c])
-                            elif x == 0 and y == 0:  # lewy gorny rog
-                                smoothed_pixels[y, x, c] = np.median(self.pixels[y:y + 2, x:x + 2, c])
-                            elif x == width - 1 and y == 0:  # prawy gorny rog
-                                smoothed_pixels[y, x, c] = np.median(self.pixels[y:y + 2, x:x + 1, c])
-                            elif x == 0 and y == height - 1:  # lewy dolny rog
-                                smoothed_pixels[y, x, c] = np.median(self.pixels[y - 1:y + 1, x:x + 2, c])
-                            elif x == width - 1 and y == height - 1:  # prawy dolny rog
-                                smoothed_pixels[y, x, c] = np.median(self.pixels[y - 1:y + 1, x - 1:x + 1, c])
+            if padding:
+                height, width, _ = self.pixels.shape
+                smoothed_pixels = deepcopy(self.pixels)
+                for y in range(0, height):
+                    for x in range(0, width):
+                        if y == 0 or y == height - 1 or x == 0 or x == width - 1:
+                            for c in range(3):  # Loop over R, G, and B channels
+                                if 0 < y < height - 1 and 0 < x:  # krawedz prawa
+                                    smoothed_pixels[y, x, c] = np.median(self.pixels[y - 1:y + 2, x - 1:x + 1, c])
+                                elif 0 < y < height - 1 and x < width - 1:  # krawedz lewa
+                                    smoothed_pixels[y, x, c] = np.median(self.pixels[y - 1:y + 2, x:x + 2, c])
+                                elif 0 < y and 0 < x < width - 1:  # dol
+                                    smoothed_pixels[y, x, c] = np.median(self.pixels[y - 1:y + 1, x - 1:x + 2, c])
+                                elif y < height - 1 and 0 < x < width - 1:  # gora
+                                    smoothed_pixels[y, x, c] = np.median(self.pixels[y:y + 2, x - 1:x + 2, c])
+                                elif x == 0 and y == 0:  # lewy gorny rog
+                                    smoothed_pixels[y, x, c] = np.median(self.pixels[y:y + 2, x:x + 2, c])
+                                elif x == width - 1 and y == 0:  # prawy gorny rog
+                                    smoothed_pixels[y, x, c] = np.median(self.pixels[y:y + 2, x:x + 1, c])
+                                elif x == 0 and y == height - 1:  # lewy dolny rog
+                                    smoothed_pixels[y, x, c] = np.median(self.pixels[y - 1:y + 1, x:x + 2, c])
+                                elif x == width - 1 and y == height - 1:  # prawy dolny rog
+                                    smoothed_pixels[y, x, c] = np.median(self.pixels[y - 1:y + 1, x - 1:x + 1, c])
             if self.pixels.shape < (3, 3, 3):
                 print("Nie mozna nalozyc maski jesli wymiar obrazu jest ponizej 3x3")
                 return
@@ -351,11 +361,12 @@ class ImageRefactorApp:
             # przypisanie median do srodowych wartosci w macierzach
             self.pixels[:, :, 0][1:-1, 1:-1], self.pixels[:, :, 1][1:-1, 1:-1], self.pixels[:, :, 2][1:-1, 1:-1] = mediansOfRedSquares, mediansOfGreenSquares, mediansOfBlueSquares
             #dodanie krawedzi fo pixeli
-            for y in range(0, height):
-                for x in range(0, width):
-                    if y == 0 or y == height - 1 or x == 0 or x == width - 1:
-                        for c in range(3):
-                            self.pixels[y, x, c] = smoothed_pixels[y, x, c]
+            if padding:
+                for y in range(0, height):
+                    for x in range(0, width):
+                        if y == 0 or y == height - 1 or x == 0 or x == width - 1:
+                            for c in range(3):
+                                self.pixels[y, x, c] = smoothed_pixels[y, x, c]
             self.limitPixelsAndShowImage(self.pixels, True)
         self.measureTime("END")
 
@@ -395,54 +406,6 @@ class ImageRefactorApp:
             self.limitPixelsAndShowImage(sobelPixels, True)
         self.measureTime("END")
 
-    # def sobelFilterOptimized(self, sobelVariant, padding=True):
-    #     self.measureTime("START")
-    #     if self.image:
-    #         if self.pixels.shape < (3, 3, 3):
-    #             print("Nie mozna nalozyc maski jesli wymiar obrazu jest ponizej 3x3")
-    #             return
-    #         sobelX = np.array([[1, 0, -1], [2, 0, -2], [1, 0, -1]])
-    #         sobelY = np.array([[1, 2, 1], [0, 0, 0], [-1, -2, -1]])
-    #         if padding:
-    #             pad_size = 3 // 2
-    #             paddedImage = np.pad(self.pixels, ((pad_size, pad_size), (pad_size, pad_size), (0, 0)), mode='edge')
-    #             # wyciecie wartosci czerwonych, zielonych i niebieskich pixeli osobno
-    #             reds, greens, blues = paddedImage[:, :, 0], paddedImage[:, :, 1], paddedImage[:, :, 2]
-    #             # stworzenie macierz 3x3 z sasiadujacych wartosci dla kazdej grupy
-    #             redSquares, greenSquares, blueSquares = np.lib.stride_tricks.sliding_window_view(reds, (3, 3)), np.lib.stride_tricks.sliding_window_view(greens, (3, 3)), np.lib.stride_tricks.sliding_window_view(blues, (3, 3))
-    #             # sobel z kazdej macierzy
-    #             if sobelVariant == "0":
-    #                 sobelsOfRedSquares = np.sqrt(np.add(np.power(np.sum(redSquares * sobelX, axis=(2, 3)), 2), np.power(np.sum(redSquares * sobelY, axis=(2, 3)), 2)))
-    #                 sobelsOfGreenSquares = np.sqrt(np.add(np.power(np.sum(greenSquares * sobelX, axis=(2, 3)), 2), np.power(np.sum(greenSquares * sobelY, axis=(2, 3)), 2)))
-    #                 sobelsOfBlueSquares = np.sqrt(np.add(np.power(np.sum(blueSquares * sobelX, axis=(2, 3)), 2), np.power(np.sum(blueSquares * sobelY, axis=(2, 3)), 2)))
-    #             elif sobelVariant == "1":
-    #                 sobelsOfRedSquares, sobelsOfGreenSquares, sobelsOfBlueSquares = np.sum(redSquares * sobelY, axis=(2, 3)), np.sum(greenSquares * sobelY, axis=(2, 3)), np.sum(blueSquares * sobelY, axis=(2, 3))
-    #             elif sobelVariant == "2":
-    #                 sobelsOfRedSquares, sobelsOfGreenSquares, sobelsOfBlueSquares = np.sum(redSquares * sobelX, axis=(2, 3)), np.sum(greenSquares * sobelX, axis=(2, 3)), np.sum(blueSquares * sobelX, axis=(2, 3))
-    #             else:
-    #                 raise Exception("Nie ma takiej opcji Sobela")
-    #             # przypisanie sobeli do srodowych wartosci w macierzach
-    #             self.pixels[:, :, 0][:, :], self.pixels[:, :, 1][:, :], self.pixels[:, :, 2][:, :] = sobelsOfRedSquares, sobelsOfGreenSquares, sobelsOfBlueSquares
-    #         else:
-    #             # wyciecie wartosci czerwonych, zielonych i niebieskich pixeli osobno
-    #             reds, greens, blues = self.pixels[:, :, 0], self.pixels[:, :, 1], self.pixels[:, :, 2]
-    #             # stworzenie macierz 3x3 z sasiadujacych wartosci dla kazdej grupy
-    #             redSquares, greenSquares, blueSquares = np.lib.stride_tricks.sliding_window_view(reds, (3, 3)), np.lib.stride_tricks.sliding_window_view(greens, (3, 3)), np.lib.stride_tricks.sliding_window_view(blues, (3, 3))
-    #             # sobel z kazdej macierzy
-    #             if sobelVariant == "0":
-    #                 sobelsOfRedSquares = np.sqrt(np.add(np.power(np.sum(redSquares * sobelX, axis=(2, 3)), 2), np.power(np.sum(redSquares * sobelY, axis=(2, 3)), 2)))
-    #                 sobelsOfGreenSquares = np.sqrt(np.add(np.power(np.sum(greenSquares * sobelX, axis=(2, 3)), 2), np.power(np.sum(greenSquares * sobelY, axis=(2, 3)), 2)))
-    #                 sobelsOfBlueSquares = np.sqrt(np.add(np.power(np.sum(blueSquares * sobelX, axis=(2, 3)), 2), np.power(np.sum(blueSquares * sobelY, axis=(2, 3)), 2)))
-    #             elif sobelVariant == "1":
-    #                 sobelsOfRedSquares, sobelsOfGreenSquares, sobelsOfBlueSquares = np.sum(redSquares * sobelY, axis=(2, 3)), np.sum(greenSquares * sobelY, axis=(2, 3)), np.sum(blueSquares * sobelY, axis=(2, 3))
-    #             elif sobelVariant == "2":
-    #                 sobelsOfRedSquares, sobelsOfGreenSquares, sobelsOfBlueSquares = np.sum(redSquares * sobelX, axis=(2, 3)), np.sum(greenSquares * sobelX, axis=(2, 3)), np.sum(blueSquares * sobelX, axis=(2, 3))
-    #             else:
-    #                 raise Exception("Nie ma takiej opcji Sobela")
-    #             # przypisanie sobeli do srodowych wartosci w macierzach
-    #             self.pixels[:, :, 0][1:-1, 1:-1], self.pixels[:, :, 1][1:-1, 1:-1], self.pixels[:, :, 2][1:-1, 1:-1] = sobelsOfRedSquares, sobelsOfGreenSquares, sobelsOfBlueSquares
-    #         self.limitPixelsAndShowImage(self.pixels, True)
-    #     self.measureTime("END")
     def sobelFilterOptimized(self, sobelVariant, padding=True):
         self.measureTime("START")
         if self.image:
@@ -479,7 +442,7 @@ class ImageRefactorApp:
             self.limitPixelsAndShowImage(self.pixels, True)
         self.measureTime("END")
 
-    def highPassSharpeningFilter(self, dim=3):
+    def highPassSharpeningFilter(self, dim=3, padding=True):
         self.measureTime("START")
         if self.image:
             height, width, _ = self.pixels.shape
@@ -487,22 +450,38 @@ class ImageRefactorApp:
             if dim == 3:
                 highPassMask = np.array([[0, -1, 0], [-1, 5, -1], [0, -1, 0]])
                 # highPassMask = np.array([[-1, -1, -1], [-1, 9, -1], [-1, -1, -1]])
-                for y in range(1, height-1):
-                    for x in range(1, width-1):
-                        for c in range(3):  # Loop over R, G, and B channels
-                                highPassPixels[y, x, c] = np.sum(self.pixels[y - 1:y + 2, x - 1:x + 2, c] * highPassMask)
+                if padding:
+                    pad_size = 3 // 2
+                    paddedImage = np.pad(self.pixels, ((pad_size, pad_size), (pad_size, pad_size), (0, 0)), mode='edge')
+                    for y in range(height):
+                        for x in range(width):
+                            for c in range(3):  # Loop over R, G, and B channels
+                                    highPassPixels[y, x, c] = np.sum(paddedImage[y:y+3, x:x+3, c] * highPassMask)
+                else:
+                    for y in range(1, height-1):
+                        for x in range(1, width-1):
+                            for c in range(3):  # Loop over R, G, and B channels
+                                    highPassPixels[y, x, c] = np.sum(self.pixels[y - 1:y + 2, x - 1:x + 2, c] * highPassMask)
             elif dim == 5:
                 highPassMask = np.array([[-1, -1, -1, -1, -1], [-1, 1, 2, 1, -1], [-1, 2, 5, 2, -1], [-1, 1, 2, 1, -1], [-1, -1, -1, -1, -1]])
-                for y in range(2, height-2):
-                    for x in range(2, width-2):
-                        for c in range(3):  # Loop over R, G, and B channels
-                                highPassPixels[y, x, c] = np.sum(self.pixels[y - 2:y + 3, x - 2:x + 3, c] * highPassMask)
+                if padding:
+                    pad_size = 5 // 2
+                    paddedImage = np.pad(self.pixels, ((pad_size, pad_size), (pad_size, pad_size), (0, 0)), mode='edge')
+                    for y in range(height):
+                        for x in range(width):
+                            for c in range(3):  # Loop over R, G, and B channels
+                                    highPassPixels[y, x, c] = np.sum(paddedImage[y:y+5, x:x+5, c] * highPassMask)
+                else:
+                    for y in range(2, height-2):
+                        for x in range(2, width-2):
+                            for c in range(3):  # Loop over R, G, and B channels
+                                    highPassPixels[y, x, c] = np.sum(self.pixels[y - 2:y + 3, x - 2:x + 3, c] * highPassMask)
             else:
                 raise Exception("Nie ma takiej opcji")
             self.limitPixelsAndShowImage(highPassPixels, True)
         self.measureTime("END")
 
-    def highPassSharpeningFilterOptimized(self, dim=3):
+    def highPassSharpeningFilterOptimized(self, dim=3, padding=True):
         self.measureTime("START")
         if self.image:
             if self.pixels.shape < (dim, dim, 3):
@@ -516,25 +495,33 @@ class ImageRefactorApp:
             else:
                 raise Exception("Nie ma takiej opcji")
             # wyciecie wartosci czerwonych, zielonych i niebieskich pixeli osobno
-            reds, greens, blues = self.pixels[:, :, 0], self.pixels[:, :, 1], self.pixels[:, :, 2]
+            if padding:
+                pad_size = dim // 2
+                paddedImage = np.pad(self.pixels, ((pad_size, pad_size), (pad_size, pad_size), (0, 0)), mode='edge')
+                reds, greens, blues = paddedImage[:, :, 0], paddedImage[:, :, 1], paddedImage[:, :, 2]
+            else:
+                reds, greens, blues = self.pixels[:, :, 0], self.pixels[:, :, 1], self.pixels[:, :, 2]
             # stworzenie macierz dim x dim z sasiadujacych wartosci dla kazdej grupy
             redSquares, greenSquares, blueSquares = np.lib.stride_tricks.sliding_window_view(reds, (dim, dim)), np.lib.stride_tricks.sliding_window_view(greens, (dim, dim)), np.lib.stride_tricks.sliding_window_view(blues, (dim, dim))
             # wyliczenie highpass z kazdej macierzy
             highpassesOfRedSquares, highpassesOfGreenSquares, highpassesOfBlueSquares = np.sum(redSquares * highPassMask, axis=(2, 3)), np.sum(greenSquares * highPassMask, axis=(2, 3)), np.sum(blueSquares * highPassMask, axis=(2, 3))
-            # przypisanie median do srodowych wartosci w macierzach
-            start = int(dim/2)
-            end = -1 * start
-            self.pixels[:, :, 0][start:end, start:end], self.pixels[:, :, 1][start:end, start:end], self.pixels[:, :, 2][start:end, start:end] = highpassesOfRedSquares, highpassesOfGreenSquares, highpassesOfBlueSquares
+            # przypisanie highpass do srodowych wartosci w macierzach
+            if padding:
+                self.pixels[:, :, 0][:, :], self.pixels[:, :, 1][:, :], self.pixels[:, :, 2][:, :] = highpassesOfRedSquares, highpassesOfGreenSquares, highpassesOfBlueSquares
+            else:
+                start = int(dim/2)
+                end = -1 * start
+                self.pixels[:, :, 0][start:end, start:end], self.pixels[:, :, 1][start:end, start:end], self.pixels[:, :, 2][start:end, start:end] = highpassesOfRedSquares, highpassesOfGreenSquares, highpassesOfBlueSquares
             self.limitPixelsAndShowImage(self.pixels, True)
         self.measureTime("END")
 
-    def gaussianBlurFilter(self, dim=3, simplified=True, padding=True):
+    def gaussianBlurFilter(self, dim=5, simplified=True, padding=True):
         self.measureTime("START")
         if self.image:
+            height, width, _ = self.pixels.shape
+            gaussianBlurPixels = deepcopy(self.pixels)
             if simplified:
                 gaussianBlurMask = np.array([[1, 2, 1], [2, 4, 2], [1, 2, 1]])
-                height, width, _ = self.pixels.shape
-                gaussianBlurPixels = deepcopy(self.pixels)
                 if padding:
                     pad_size = 3 // 2
                     paddedImage = np.pad(self.pixels, ((pad_size, pad_size), (pad_size, pad_size), (0, 0)), mode='edge')
