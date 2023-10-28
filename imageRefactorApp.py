@@ -319,10 +319,48 @@ class ImageRefactorApp:
         #self.destroyCustomMaskCreator()
         self.initCustomMaskCreator()
 
+    # def createMask(self):
+    #     print(f"Wykonaj maske {self.entriesData}")
+    #     mask = np.array(self.entriesData)
+    #     print(mask)
+    #     self.measureTime("START")
+    #     if self.image:
+    #         # maskHeight, maskWidth = mask.shape
+    #         dimY, dimX = mask.shape
+    #         includeEdges = True if self.switchEdgesState.get() == "yes" else False
+    #         if self.pixels.shape < (dimY, dimX, 3):
+    #             print("Nie mozna nalozyc maski jesli wymiar obrazu jest ponizej wymiaru maski")
+    #             return
+    #         # dodanie obramowania (kopiowanie wartosci granicznych) przy wlaczonym obramowaniu
+    #         if includeEdges:
+    #             padY = dimX // 2
+    #             padX = dimY // 2
+    #             paddedImage = np.pad(self.pixels, ((padY, padX), (padY, padX), (0, 0)), mode='edge')
+    #             reds, greens, blues = paddedImage[:, :, 0], paddedImage[:, :, 1], paddedImage[:, :, 2]
+    #             print(f"reds: {reds}")
+    #         else:
+    #             reds, greens, blues = self.pixels[:, :, 0], self.pixels[:, :, 1], self.pixels[:, :, 2]
+    #         # stworzenie prostokatow z sasiadujacych wartosci dla kazdej grupy
+    #         redSquares, greenSquares, blueSquares = np.lib.stride_tricks.sliding_window_view(reds, (dimY, dimX)), np.lib.stride_tricks.sliding_window_view(greens, (dimY, dimX)), np.lib.stride_tricks.sliding_window_view(blues, (dimY, dimX))
+    #
+    #         print(f"RSquares {redSquares}")
+    #         # customMask z kazdej macierzy
+    #         customMasksOfRedSquares, customMasksOfGreenSquares, customMasksOfBlueSquares = np.sum(redSquares * mask, axis=(2, 3)), np.sum(greenSquares * mask, axis=(2, 3)), np.sum(blueSquares * mask, axis=(2, 3))
+    #         print(f"Custom = {customMasksOfRedSquares}")
+    #         # przypisanie customMask do srodowych wartosci w macierzach
+    #         if includeEdges:
+    #             self.pixels[:, :, 0][:, :], self.pixels[:, :, 1][:, :], self.pixels[:, :, 2][:, :] = customMasksOfRedSquares, customMasksOfGreenSquares, customMasksOfBlueSquares
+    #         else:
+    #             startY = int(dimY / 2)
+    #             endY = -1 * startY
+    #             startX = int(dimX / 2)
+    #             endX = -1 * startX
+    #             self.pixels[:, :, 0][startY:endY, startX:endX], self.pixels[:, :, 1][startY:endY, startX:endX], self.pixels[:, :, 2][startY:endY, startX:endX] = customMasksOfRedSquares, customMasksOfGreenSquares, customMasksOfBlueSquares
+    #         self.limitPixelsAndShowImage(self.pixels, True)
+    #     self.measureTime("END")
     def createMask(self):
         print(f"Wykonaj maske {self.entriesData}")
         mask = np.array(self.entriesData)
-        print(mask)
         self.measureTime("START")
         if self.image:
             # maskHeight, maskWidth = mask.shape
@@ -333,28 +371,25 @@ class ImageRefactorApp:
                 return
             # dodanie obramowania (kopiowanie wartosci granicznych) przy wlaczonym obramowaniu
             if includeEdges:
-                padY = dimX // 2
-                padX = dimY // 2
-                paddedImage = np.pad(self.pixels, ((padY, padX), (padY, padX), (0, 0)), mode='edge')
+                padY = dimY // 2
+                padX = dimX // 2
+                paddedImage = np.pad(self.pixels, ((padY, padY), (padX, padX), (0, 0)), mode='edge')
                 reds, greens, blues = paddedImage[:, :, 0], paddedImage[:, :, 1], paddedImage[:, :, 2]
-                print(f"reds: {reds}")
             else:
                 reds, greens, blues = self.pixels[:, :, 0], self.pixels[:, :, 1], self.pixels[:, :, 2]
             # stworzenie prostokatow z sasiadujacych wartosci dla kazdej grupy
             redSquares, greenSquares, blueSquares = np.lib.stride_tricks.sliding_window_view(reds, (dimY, dimX)), np.lib.stride_tricks.sliding_window_view(greens, (dimY, dimX)), np.lib.stride_tricks.sliding_window_view(blues, (dimY, dimX))
-
-            print(f"RSquares {redSquares}")
             # customMask z kazdej macierzy
             customMasksOfRedSquares, customMasksOfGreenSquares, customMasksOfBlueSquares = np.sum(redSquares * mask, axis=(2, 3)), np.sum(greenSquares * mask, axis=(2, 3)), np.sum(blueSquares * mask, axis=(2, 3))
-            print(f"Custom = {customMasksOfRedSquares}")
             # przypisanie customMask do srodowych wartosci w macierzach
             if includeEdges:
                 self.pixels[:, :, 0][:, :], self.pixels[:, :, 1][:, :], self.pixels[:, :, 2][:, :] = customMasksOfRedSquares, customMasksOfGreenSquares, customMasksOfBlueSquares
             else:
+                pixHeight, pixWidth, _ = self.pixels.shape
                 startY = int(dimY / 2)
-                endY = -1 * startY
+                endY = -1 * startY if startY != 0 else pixHeight+1
                 startX = int(dimX / 2)
-                endX = -1 * startX
+                endX = -1 * startX if startX != 0 else pixWidth+1
                 self.pixels[:, :, 0][startY:endY, startX:endX], self.pixels[:, :, 1][startY:endY, startX:endX], self.pixels[:, :, 2][startY:endY, startX:endX] = customMasksOfRedSquares, customMasksOfGreenSquares, customMasksOfBlueSquares
             self.limitPixelsAndShowImage(self.pixels, True)
         self.measureTime("END")
