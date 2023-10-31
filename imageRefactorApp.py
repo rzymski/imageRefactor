@@ -22,42 +22,42 @@ class ImageRefactorApp:
         self.root.geometry(f"{self.screen_width}x{self.screen_height}")
         self.frame = LabelFrame(self.root, padx=0, pady=0, labelanchor="w")
         self.frame.pack(side="left", fill="both")
-
+        # Button to load jpg image
         self.loadJPGButton = Button(self.frame, text="Load JPG", command=self.loadJPG, padx=10, pady=10)
         self.loadJPGButton.grid(row=0, column=0, sticky="WE")
         self.loadJPGButton['font'] = bigFont
-
+        # Button to reload previously loaded jpg image
         self.reloadOriginalJPGButton = Button(self.frame, text="Reload original JPG", command=self.reloadOriginalJPG, padx=10, pady=10)
         self.reloadOriginalJPGButton.grid(row=1, column=0, sticky="WE")
         self.reloadOriginalJPGButton['font'] = bigFont
-
+        # Button to save image
         self.saveJPGButton = Button(self.frame, text="Save JPG", command=self.saveJPG, padx=10, pady=10)
         self.saveJPGButton.grid(row=2, column=0, sticky="WE")
         self.saveJPGButton['font'] = bigFont
         # LabelFrame for pixel
-        self.pixel_info_label = LabelFrame(self.frame, text="Pixel", padx=0, pady=0, labelanchor="nw")
-        self.pixel_info_label.grid(row=4, column=0, sticky="WE")
+        self.pixelInfoLabel = LabelFrame(self.frame, text="Pixel", padx=0, pady=0, labelanchor="nw")
+        self.pixelInfoLabel.grid(row=4, column=0, sticky="WE")
         # labels for pixel
-        self.pixelXLabel = Label(self.pixel_info_label, text="X")
+        self.pixelXLabel = Label(self.pixelInfoLabel, text="X")
         self.pixelXLabel.grid(row=0, column=0, sticky="E")
-        self.pixelYLabel = Label(self.pixel_info_label, text="Y")
+        self.pixelYLabel = Label(self.pixelInfoLabel, text="Y")
         self.pixelYLabel.grid(row=1, column=0, sticky="E")
-        self.pixelRedLabel = Label(self.pixel_info_label, text="Red")
+        self.pixelRedLabel = Label(self.pixelInfoLabel, text="Red")
         self.pixelRedLabel.grid(row=2, column=0, sticky="E")
-        self.pixelGreenLabel = Label(self.pixel_info_label, text="Green")
+        self.pixelGreenLabel = Label(self.pixelInfoLabel, text="Green")
         self.pixelGreenLabel.grid(row=3, column=0, sticky="E")
-        self.pixelBlueLabel = Label(self.pixel_info_label, text="Blue")
+        self.pixelBlueLabel = Label(self.pixelInfoLabel, text="Blue")
         self.pixelBlueLabel.grid(row=4, column=0, sticky="E")
         # entries for pixel
-        self.pixelXEntry = Entry(self.pixel_info_label, state=DISABLED, disabledforeground="black", disabledbackground="white", justify=CENTER)
+        self.pixelXEntry = Entry(self.pixelInfoLabel, state=DISABLED, disabledforeground="black", disabledbackground="white", justify=CENTER)
         self.pixelXEntry.grid(row=0, column=1)
-        self.pixelYEntry = Entry(self.pixel_info_label, state=DISABLED, disabledforeground="black", disabledbackground="white", justify=CENTER)
+        self.pixelYEntry = Entry(self.pixelInfoLabel, state=DISABLED, disabledforeground="black", disabledbackground="white", justify=CENTER)
         self.pixelYEntry.grid(row=1, column=1)
-        self.pixelRedEntry = Entry(self.pixel_info_label, state=DISABLED, disabledforeground="black", disabledbackground="white", justify=CENTER)
+        self.pixelRedEntry = Entry(self.pixelInfoLabel, state=DISABLED, disabledforeground="black", disabledbackground="white", justify=CENTER)
         self.pixelRedEntry.grid(row=2, column=1)
-        self.pixelGreenEntry = Entry(self.pixel_info_label, state=DISABLED, disabledforeground="black", disabledbackground="white", justify=CENTER)
+        self.pixelGreenEntry = Entry(self.pixelInfoLabel, state=DISABLED, disabledforeground="black", disabledbackground="white", justify=CENTER)
         self.pixelGreenEntry.grid(row=3, column=1)
-        self.pixelBlueEntry = Entry(self.pixel_info_label, state=DISABLED, disabledforeground="black", disabledbackground="white", justify=CENTER)
+        self.pixelBlueEntry = Entry(self.pixelInfoLabel, state=DISABLED, disabledforeground="black", disabledbackground="white", justify=CENTER)
         self.pixelBlueEntry.grid(row=4, column=1)
         # LabelFrame for operations
         self.pointOperationsLabel = LabelFrame(self.frame, text="Point transformation", padx=10, pady=10, labelanchor="nw")
@@ -150,7 +150,7 @@ class ImageRefactorApp:
         self.labelCustomMask = None
         self.entriesData = [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]]
         # self.entries = []
-
+    #walidacja inputów
     def validateEntry(self, P):
         pattern = r'^-?\d*(\.\d*)?$'
         if re.match(pattern, P) is not None:
@@ -166,7 +166,7 @@ class ImageRefactorApp:
             self.sobelOptionsLabel.grid(row=5, column=0, sticky="WE")
         else:
             self.sobelOptionsLabel.grid_forget()
-
+    # dostosowanie layoutu
     def updateParameterLabels(self, value):
         self.redChangeLabel.grid_forget()
         self.redChangeEntry.grid_forget()
@@ -192,7 +192,7 @@ class ImageRefactorApp:
             self.parameterOperationsLabel.grid_forget()
         else:
             raise Exception("Nie ma takiej opcji")
-
+    # wybór filtra (za pomocą switcha zoptymalizowany lub nie i zwględnia krawędzie lub nie)
     def applyFilter(self):
         if self.image:
             self.hsvPixels = None
@@ -215,7 +215,7 @@ class ImageRefactorApp:
                 self.initCustomMaskCreator()
             else:
                 raise Exception(f"Nie ma takiego filtra {self.filterType.get()}")
-
+    # Kreator maski do Filtra z dowolna wlasna maska
     def initCustomMaskCreator(self):
         print(self.entriesData)
         # print("Ilosc widgetow entry", len(self.entries))
@@ -264,7 +264,7 @@ class ImageRefactorApp:
         self.labelCustomMask.rowconfigure(0, weight=1)
         self.labelCustomMask.rowconfigure(1, weight=1)
         self.labelCustomMask.rowconfigure(2, weight=1)
-
+    # Funkcje pomocnicze do filtra z własną maską
     def entryChanged(self, row, column, value):
         # print(f"Changed at row {row}, column {column}, New value: {value}")
         try:
@@ -288,7 +288,6 @@ class ImageRefactorApp:
         self.entriesLabel.destroy()
         self.createMaskButton.destroy()
         self.cancelButton.destroy()
-
 
     def addRow(self):
         print("Dodano rzad")
@@ -324,6 +323,10 @@ class ImageRefactorApp:
         #self.destroyCustomMaskCreator()
         self.initCustomMaskCreator()
 
+    def cancel(self):
+        print("Zamknij")
+        self.destroyCustomMaskCreator()
+    # Filtr z dowolna wlasna maska (musi byc nieparzysta liczba kolumn i wierszy)
     def createMask(self):
         print(f"Wykonaj maske {self.entriesData}")
         mask = np.array(self.entriesData)
@@ -359,12 +362,7 @@ class ImageRefactorApp:
                 self.pixels[:, :, 0][startY:endY, startX:endX], self.pixels[:, :, 1][startY:endY, startX:endX], self.pixels[:, :, 2][startY:endY, startX:endX] = customMasksOfRedSquares, customMasksOfGreenSquares, customMasksOfBlueSquares
             self.limitPixelsAndShowImage(self.pixels, True)
         self.measureTime("END")
-
-
-    def cancel(self):
-        print("Zamknij")
-        self.destroyCustomMaskCreator()
-
+    # Filtr uśredniajacy
     def averageFilter(self, padding=True):
         self.measureTime("START")
         if self.image:
@@ -400,7 +398,7 @@ class ImageRefactorApp:
                             print("Jest tylko jeden pixel")
             self.limitPixelsAndShowImage(smoothed_pixels, True)
         self.measureTime("END")
-
+    # Filtr uśredniajacy zoptymalizowany, wykorzystujący dobrze numpy i działający o wiele szybciej (szczególnie przy dużych obrazkach)
     def averageFilterOptimized(self, padding=True):
         self.measureTime("START")
         if self.image:
@@ -449,7 +447,7 @@ class ImageRefactorApp:
             # ograniczenie pixeli do wartosci od 0 do 255 oraz narysowanie obrazka
             self.limitPixelsAndShowImage(self.pixels, True)
         self.measureTime("END")
-
+    # Filtr medianowy
     def medianFilter(self, padding=True):
         self.measureTime("START")
         if self.image:
@@ -482,7 +480,7 @@ class ImageRefactorApp:
                             print("Jest tylko jeden pixel")
             self.limitPixelsAndShowImage(smoothed_pixels, True)
         self.measureTime("END")
-
+    # Filtr medianowy zoptymalizowany, wykorzystujący dobrze numpy i działający o wiele szybciej (szczególnie przy dużych obrazkach)
     def medianFilterOptimized(self, padding=True):
         self.measureTime("START")
         if self.image:
@@ -530,7 +528,7 @@ class ImageRefactorApp:
                                 self.pixels[y, x, c] = smoothed_pixels[y, x, c]
             self.limitPixelsAndShowImage(self.pixels, True)
         self.measureTime("END")
-
+    # Filtr wykrywający krawędzie
     def sobelFilter(self, sobelVariant, padding=True):
         self.measureTime("START")
         if self.image:
@@ -566,7 +564,7 @@ class ImageRefactorApp:
                                 raise Exception("Nie ma takiej opcji Sobela")
             self.limitPixelsAndShowImage(sobelPixels, True)
         self.measureTime("END")
-
+    # Filtr wykrywający krawędzie zoptymalizowany, wykorzystujący dobrze numpy i działający o wiele szybciej (szczególnie przy dużych obrazkach)
     def sobelFilterOptimized(self, sobelVariant, padding=True):
         self.measureTime("START")
         if self.image:
@@ -602,7 +600,7 @@ class ImageRefactorApp:
                 self.pixels[:, :, 0][1:-1, 1:-1], self.pixels[:, :, 1][1:-1, 1:-1], self.pixels[:, :, 2][1:-1, 1:-1] = sobelsOfRedSquares, sobelsOfGreenSquares, sobelsOfBlueSquares
             self.limitPixelsAndShowImage(self.pixels, True)
         self.measureTime("END")
-
+    # Filtr wyostrzający
     def highPassSharpeningFilter(self, dim=3, padding=True):
         self.measureTime("START")
         if self.image:
@@ -641,7 +639,7 @@ class ImageRefactorApp:
                 raise Exception("Nie ma takiej opcji")
             self.limitPixelsAndShowImage(highPassPixels, True)
         self.measureTime("END")
-
+    # Filtr wyostrzający zoptymalizowany, wykorzystujący dobrze numpy i działający o wiele szybciej (szczególnie przy dużych obrazkach)
     def highPassSharpeningFilterOptimized(self, dim=3, padding=True):
         self.measureTime("START")
         if self.image:
@@ -675,8 +673,8 @@ class ImageRefactorApp:
                 self.pixels[:, :, 0][start:end, start:end], self.pixels[:, :, 1][start:end, start:end], self.pixels[:, :, 2][start:end, start:end] = highpassesOfRedSquares, highpassesOfGreenSquares, highpassesOfBlueSquares
             self.limitPixelsAndShowImage(self.pixels, True)
         self.measureTime("END")
-
-    def gaussianBlurFilter(self, dim=5, simplified=True, padding=True):
+    # Filtr gaussianBlur
+    def gaussianBlurFilter(self, dim=3, simplified=True, padding=True):
         self.measureTime("START")
         if self.image:
             height, width, _ = self.pixels.shape
@@ -695,7 +693,7 @@ class ImageRefactorApp:
                         for x in range(1, width - 1):
                             for c in range(3):  # Loop over R, G, and B channels
                                 gaussianBlurPixels[y, x, c] = np.sum(self.pixels[y - 1:y + 2, x - 1:x + 2, c] * gaussianBlurMask / 16)
-            # DZIWNIE SIE ZACHOWUJE, przesuwa obraz jakby w lewy gorny rog
+            # Przy własnym liczenieniu rozkładu normalnego DZIWNIE SIE ZACHOWUJE, przesuwa obraz jakby w lewy gorny rog dlatego zakomentowane
             # else:
             #     if dim % 2 == 0:
             #         raise Exception("Size of kernel should be odd")
@@ -721,7 +719,7 @@ class ImageRefactorApp:
             #                 gaussianBlurPixels[y, x, c] = np.sum(self.pixels[y - halfDim:y + halfDim+1, x - halfDim:x + halfDim+1, c] * gaussianBlurMask)
             self.limitPixelsAndShowImage(gaussianBlurPixels, True)
         self.measureTime("END")
-
+    # Filtr gaussianBLur zoptymalizowany, wykorzystujący dobrze numpy i działający o wiele szybciej (szczególnie przy dużych obrazkach)
     def gaussianBlurFilterOptimized(self, dim=3, simplified=True, padding=False):
         self.measureTime("START")
         if self.image:
@@ -740,7 +738,7 @@ class ImageRefactorApp:
                     gaussianBlurOfRedSquares, gaussianBlurOfGreenSquares, gaussianBlurOfBlueSquares = np.sum(redSquares * gaussianBlurMask / 16, axis=(2, 3)), np.sum(greenSquares * gaussianBlurMask / 16, axis=(2, 3)), np.sum(blueSquares * gaussianBlurMask / 16, axis=(2, 3))
                     self.pixels[:, :, 0][1:-1, 1:-1], self.pixels[:, :, 1][1:-1, 1:-1], self.pixels[:, :, 2][1:-1, 1:-1] = gaussianBlurOfRedSquares, gaussianBlurOfGreenSquares, gaussianBlurOfBlueSquares # without padding
                     print("WYkonalo sie")
-            # DZIWNIE SIE ZACHOWUJE, przesuwa obraz jakby w lewy gorny rog
+            # Przy własnym liczenieniu rozkładu normalnego DZIWNIE SIE ZACHOWUJE, przesuwa obraz jakby w lewy gorny rog dlatego zakomentowane
             # else:
             #     if dim % 2 == 0:
             #         raise Exception("Size of kernel should be odd")
@@ -765,13 +763,11 @@ class ImageRefactorApp:
             #     reds, greens, blues = padded_image[:, :, 0], padded_image[:, :, 1], padded_image[:, :, 2]
             #     redSquares, greenSquares, blueSquares = np.lib.stride_tricks.sliding_window_view(reds, (dim, dim)), np.lib.stride_tricks.sliding_window_view(greens, (dim, dim)), np.lib.stride_tricks.sliding_window_view(blues, (dim, dim))
             #     gaussianBlurOfRedSquares, gaussianBlurOfGreenSquares, gaussianBlurOfBlueSquares = np.sum(redSquares * gaussianBlurMask, axis=(2, 3)), np.sum(greenSquares * gaussianBlurMask, axis=(2, 3)), np.sum(blueSquares * gaussianBlurMask, axis=(2, 3))
+            #     #with edges
             #     self.pixels[:, :, 0][0:, 0:], self.pixels[:, :, 1][0:, 0:], self.pixels[:, :, 2][0:, 0:] = gaussianBlurOfRedSquares, gaussianBlurOfGreenSquares, gaussianBlurOfBlueSquares
-            #     start = int(dim / 2)  # without padding
-            #     end = -1 * start  # without padding
-            #     self.pixels[:, :, 0][start:end, start:end], self.pixels[:, :, 1][start:end, start:end], self.pixels[:, :, 2][start:end, start:end] = gaussianBlurOfRedSquares, gaussianBlurOfGreenSquares, gaussianBlurOfBlueSquares  # without padding
             self.limitPixelsAndShowImage(self.pixels, True)
         self.measureTime("END")
-
+    # wybór przekształcenia punktowego
     def doPointTransformation(self):
         if self.operationType.get() != 'lightness':
             self.hsvPixels = None
@@ -786,7 +782,7 @@ class ImageRefactorApp:
             self.changeLightness()
         else:
             print("Nie ma takiej operacji")
-
+    # konwersja z RGB na HSV wykorzystywana do zmiany jasności
     def convertRGBtoHSV(self, r, g, b):
         r, g, b = r / 255.0, g / 255.0, b / 255.0
         max_color = max(r, g, b)
@@ -808,7 +804,7 @@ class ImageRefactorApp:
         # Calculate the value
         v = max_color * 100
         return h, s, v
-
+    # konwersja z HSV na RGB wykorzystywana do zmiany jasności
     def convertHSVtoRGB(self, h, s, v):
         s /= 100
         v /= 100
@@ -831,14 +827,14 @@ class ImageRefactorApp:
             raise Exception("H poza zakresem")
         r, g, b = round((r+m)*255), round((g+m)*255), round((b+m)*255)
         return r, g, b
-
+    # backup HSV żeby nie musiał liczyć za każdym razem HSV jeśli nie zmieniamy obrazka, a kilka razy zmieniamy jasność
     def hsvBackup(self, reds, greens, blues):
         if self.hsvPixels is None:
             h, s, v = np.vectorize(self.convertRGBtoHSV)(reds, greens, blues)
             self.hsvPixels = np.dstack((h, s, v))
             # print(self.hsvPixels)
         return self.hsvPixels[:, :, 0], self.hsvPixels[:, :, 1], self.hsvPixels[:, :, 2]
-
+    # zmiana janości
     def changeLightness(self):
         self.measureTime("START")
         if self.image:
@@ -854,8 +850,7 @@ class ImageRefactorApp:
             self.pixels[:, :, 2] = b
             self.limitPixelsAndShowImage(self.pixels, False)
         self.measureTime("END")
-        print("SKONCZYL")
-
+    # Konwersja na skalę szarości 2 sposoby
     def greyConversion(self, adjusted=False):
         self.measureTime("START")
         if self.image:
@@ -872,7 +867,7 @@ class ImageRefactorApp:
                 self.pixels[:, :, 2] = averages
             self.limitPixelsAndShowImage(self.pixels, False)
         self.measureTime("END")
-
+    # Operacje punktowe dodawanie, odejmowanie, mnożenie, dzielenie
     def simpleRGBOperation(self, operator):
         self.measureTime("START")
         if self.image:
@@ -921,7 +916,7 @@ class ImageRefactorApp:
                 raise Exception(f"Nie właściwy operator. Nie ma operatora: {operator}")
             self.limitPixelsAndShowImage(self.pixels, False)
         self.measureTime("END")
-
+    # wyświetlnie obrazka i ograniczenie zakresu pixeli do od 0 do 255 przed
     def limitPixelsAndShowImage(self, pixels=None, limitPixels=False):
         if pixels is not None:
             limitedPixels = np.clip(pixels, 0, 255)
@@ -933,7 +928,7 @@ class ImageRefactorApp:
         self.tk_image = ImageTk.PhotoImage(self.image)
         self.show_image()
 
-    def update_pixel_info_label(self, x, y, pixel_rgb):
+    def updatePixelInfoLabel(self, x, y, pixel_rgb):
         if pixel_rgb is not None:
             r, g, b = pixel_rgb
             for entry, value in zip(
@@ -1082,9 +1077,9 @@ class ImageRefactorApp:
             # print(f"Ob = {image_x} {image_y}")
             if (0 <= x < self.image.width * self.imscale) and (0 <= y < self.image.height * self.imscale):
                 pixel_rgb = self.get_pixel_color(int(x/self.imscale), int(y/self.imscale))
-                self.update_pixel_info_label(int(x/self.imscale), int(y/self.imscale), pixel_rgb)
+                self.updatePixelInfoLabel(int(x / self.imscale), int(y / self.imscale), pixel_rgb)
             elif self.pixelXEntry.get():
-                self.update_pixel_info_label(None, None, None)
+                self.updatePixelInfoLabel(None, None, None)
     
     def get_pixel_color(self, x, y):
         if self.image is not None:
