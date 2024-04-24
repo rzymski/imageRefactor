@@ -1,21 +1,19 @@
 from tkinter import *
 # import tkinter as tk
 import customtkinter as ctk
-
 from PIL import Image, ImageTk
 from tkinter.filedialog import asksaveasfilename, askopenfilename
-import tkinter.simpledialog as simpledialog
 import time
 import tkinter.font as font
 from copy import deepcopy
 import re
-
 import numpy as np
+
 
 class ImageRefactorApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("Image viewer Piotr Szumowski")
+        self.root.title("Image refactor Piotr Szumowski")
         bigFont = font.Font(size=12, weight="bold")
         self.screen_width = root.winfo_screenwidth()
         self.screen_height = root.winfo_screenheight()
@@ -105,10 +103,10 @@ class ImageRefactorApp:
         # RadioButtons for filters
         self.filterType = StringVar(value="0")
         self.switchOptimizedState = StringVar(value="on")
-        self.optimizationSwitch = ctk.CTkSwitch(self.filterLabel, text="Optimization", variable=self.switchOptimizedState, onvalue="on", offvalue="off", button_color="black")  # progress_color="blue"
+        self.optimizationSwitch = ctk.CTkSwitch(self.filterLabel, text="Optimization", variable=self.switchOptimizedState, onvalue="on", offvalue="off", button_color="black", text_color="black")  # progress_color="blue"
         self.optimizationSwitch.grid(row=0, column=0, sticky="WE")
         self.switchEdgesState = StringVar(value="yes")
-        self.edgesSwitch = ctk.CTkSwitch(self.filterLabel, text="Include edges", variable=self.switchEdgesState, onvalue="yes", offvalue="no", button_color="black")  # progress_color="blue"
+        self.edgesSwitch = ctk.CTkSwitch(self.filterLabel, text="Include edges", variable=self.switchEdgesState, onvalue="yes", offvalue="no", button_color="black", text_color="black")  # progress_color="blue"
         self.edgesSwitch.grid(row=1, column=0, sticky="WE")
         self.filterAverage = Radiobutton(self.filterLabel, text="Average filter", value="0", variable=self.filterType, command=self.onFilterSelect)
         self.filterAverage.grid(row=2, column=0, sticky="W")
@@ -149,8 +147,8 @@ class ImageRefactorApp:
 
         self.labelCustomMask = None
         self.entriesData = [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]]
-        # self.entries = []
-    #walidacja inputów
+
+    # walidacja inputów
     def validateEntry(self, P):
         pattern = r'^-?\d*(\.\d*)?$'
         if re.match(pattern, P) is not None:
